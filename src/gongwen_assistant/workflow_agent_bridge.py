@@ -6,6 +6,8 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict
 
+from .errors import AgentCallError, AgentParseError, AgentTimeoutError, EmptyOutputError, UpstreamConfigError
+
 
 @dataclass
 class WorkflowAgentResult:
@@ -35,21 +37,35 @@ class WorkflowAgentBridge:
 
     def run(self, task: str, prompt: str, timeout_seconds: int = 180) -> WorkflowAgentResult:
         started = time.time()
-        proc = subprocess.run(
-            [
-                'openclaw', 'agent',
-                '--agent', self.agent_id,
-                '--message', prompt,
-                '--json',
-                '--timeout', str(timeout_seconds),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds + 15,
-        )
+        try:
+            proc = subprocess.run(
+                [
+                    'openclaw', 'agent',
+                    '--agent', self.agent_id,
+                    '--message', prompt,
+                    '--json',
+                    '--timeout', str(timeout_seconds),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds + 15,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise AgentTimeoutError(detail=str(exc), stage=task, upstream='openclaw agent') from exc
+        except FileNotFoundError as exc:
+            raise UpstreamConfigError(message='OpenClaw CLI 不可用', detail=str(exc), stage=task, upstream='openclaw agent') from exc
+
         if proc.returncode != 0:
-            raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or 'workflow agent call failed')
-        data = json.loads(proc.stdout)
+            detail = proc.stderr.strip() or proc.stdout.strip() or 'workflow agent call failed'
+            if 'not found' in detail.lower() or 'unknown agent' in detail.lower() or 'no such file' in detail.lower():
+                raise UpstreamConfigError(detail=detail, stage=task, upstream='openclaw agent')
+            raise AgentCallError(detail=detail, stage=task, upstream='openclaw agent')
+
+        try:
+            data = json.loads(proc.stdout)
+        except json.JSONDecodeError as exc:
+            raise AgentParseError(detail=str(exc), stage=task, upstream='openclaw agent') from exc
+
         payloads = (((data or {}).get('result') or {}).get('payloads') or [])
         text_out = ''
         for item in payloads:
@@ -57,7 +73,7 @@ class WorkflowAgentBridge:
                 text_out = item['text']
                 break
         if not text_out:
-            raise RuntimeError('workflow agent returned no text payload')
+            raise EmptyOutputError(stage=task, upstream='openclaw agent')
         meta = ((data or {}).get('result') or {}).get('meta') or {}
         agent_meta = meta.get('agentMeta') or {}
         return WorkflowAgentResult(

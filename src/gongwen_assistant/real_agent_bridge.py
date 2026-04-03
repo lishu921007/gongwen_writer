@@ -6,6 +6,8 @@ from dataclasses import dataclass
 import time
 from typing import Any, Dict
 
+from .errors import AgentCallError, AgentParseError, AgentTimeoutError, EmptyOutputError, UpstreamConfigError
+
 
 @dataclass
 class RealAgentResult:
@@ -39,21 +41,35 @@ class RealAgentBridge:
             '3）对缺失事实使用稳妥占位，不要编造。\n\n'
             f'用户需求：{text}'
         )
-        proc = subprocess.run(
-            [
-                'openclaw', 'agent',
-                '--agent', self.agent_id,
-                '--message', prompt,
-                '--json',
-                '--timeout', str(timeout_seconds),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds + 15,
-        )
+        try:
+            proc = subprocess.run(
+                [
+                    'openclaw', 'agent',
+                    '--agent', self.agent_id,
+                    '--message', prompt,
+                    '--json',
+                    '--timeout', str(timeout_seconds),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds + 15,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise AgentTimeoutError(detail=str(exc), stage='zhongshu', upstream='openclaw agent') from exc
+        except FileNotFoundError as exc:
+            raise UpstreamConfigError(message='OpenClaw CLI 不可用', detail=str(exc), stage='zhongshu', upstream='openclaw agent') from exc
+
         if proc.returncode != 0:
-            raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or 'real agent call failed')
-        data = json.loads(proc.stdout)
+            detail = proc.stderr.strip() or proc.stdout.strip() or 'real agent call failed'
+            if 'not found' in detail.lower() or 'unknown agent' in detail.lower() or 'no such file' in detail.lower():
+                raise UpstreamConfigError(detail=detail, stage='zhongshu', upstream='openclaw agent')
+            raise AgentCallError(detail=detail, stage='zhongshu', upstream='openclaw agent')
+
+        try:
+            data = json.loads(proc.stdout)
+        except json.JSONDecodeError as exc:
+            raise AgentParseError(detail=str(exc), stage='zhongshu', upstream='openclaw agent') from exc
+
         payloads = (((data or {}).get('result') or {}).get('payloads') or [])
         text_out = ''
         for item in payloads:
@@ -61,7 +77,7 @@ class RealAgentBridge:
                 text_out = item['text']
                 break
         if not text_out:
-            raise RuntimeError('real agent returned no text payload')
+            raise EmptyOutputError(stage='zhongshu', upstream='openclaw agent')
         meta = ((data or {}).get('result') or {}).get('meta') or {}
         agent_meta = meta.get('agentMeta') or {}
         duration_ms = int(meta.get('durationMs') or round((time.time() - started) * 1000))

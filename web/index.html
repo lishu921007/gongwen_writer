@@ -140,6 +140,13 @@
         min-height:110px; white-space:pre-wrap; word-break:break-word; line-height:1.8; color:#334155; padding:14px;
       }
       .collapsed .body { display:none; }
+      .dept-summary { display:grid; grid-template-columns:1.6fr .8fr .8fr; gap:10px; align-items:start; }
+      .dept-mini-card { padding:12px; border-radius:14px; background:rgba(248,250,252,.92); border:1px solid rgba(148,163,184,.14); }
+      .dept-mini-title { font-size:11px; color:var(--muted); margin-bottom:6px; font-weight:700; }
+      .dept-mini-value { font-size:13px; color:#1e293b; line-height:1.6; font-weight:700; }
+      .dept-count { font-size:26px; line-height:1; font-weight:800; }
+      .dept-count-label { margin-top:6px; font-size:11px; color:var(--muted); }
+      .dept-detail-text { margin-top:12px; }
       .risk-box, .required-box { margin-top:12px; padding:12px; border-radius:14px; }
       .risk-box { background:var(--danger-soft); border:1px solid rgba(220,38,38,.12); }
       .required-box { background:var(--warn-soft); border:1px solid rgba(217,119,6,.16); }
@@ -331,7 +338,8 @@
         currentLiubu = liubu || {};
         const entries=Object.entries(currentLiubu);
         if(!entries.length){ $('dept-grid').innerHTML=''; renderPills('risk-summary', [], 'pill-risk', '暂无'); renderPills('required-summary', [], 'pill-required', '暂无'); return; }
-        $('dept-grid').innerHTML=entries.map(([k,v])=>`<div class="dept-card collapsed" data-dept-card="${k}"><div class="head"><span>${DEPT_MAP[k]||k}</span><button class="ghost-btn" data-toggle-dept="${k}">展开/折叠</button></div><div class="body"><div>${v.text||''}</div><div class="risk-box"><div class="box-title">关键风险</div><div class="pill-wrap">${((v.key_risks||[]).length ? (v.key_risks||[]).map(x=>`<span class="pill pill-risk">${x}</span>`).join('') : '<span class="pill pill-risk">暂无</span>')}</div></div><div class="required-box"><div class="box-title">必补要素</div><div class="pill-wrap">${((v.required_fields||[]).length ? (v.required_fields||[]).map(x=>`<span class="pill pill-required">${x}</span>`).join('') : '<span class="pill pill-required">暂无</span>')}</div></div></div></div>`).join('');
+        $('dept-grid').innerHTML=entries.map(([k,v])=>`<div class="dept-card" data-dept-card="${k}"><div class="head"><span>${DEPT_MAP[k]||k}</span><button class="ghost-btn" data-toggle-dept="${k}">展开/折叠</button></div><div class="body"><div class="dept-summary"><div class="dept-mini-card"><div class="dept-mini-title">部门判断</div><div class="dept-mini-value">${v.judgment||'暂无判断'}</div></div><div class="dept-mini-card"><div class="dept-mini-title">关键风险</div><div class="dept-count">${(v.key_risks||[]).length}</div><div class="dept-count-label">风险条数</div></div><div class="dept-mini-card"><div class="dept-mini-title">必补要素</div><div class="dept-count">${(v.required_fields||[]).length}</div><div class="dept-count-label">待补条数</div></div></div><div class="dept-detail-text">${v.text||''}</div><div class="risk-box"><div class="box-title">关键风险</div><div class="pill-wrap">${((v.key_risks||[]).length ? (v.key_risks||[]).map(x=>`<span class="pill pill-risk">${x}</span>`).join('') : '<span class="pill pill-risk">暂无</span>')}</div></div><div class="required-box"><div class="box-title">必补要素</div><div class="pill-wrap">${((v.required_fields||[]).length ? (v.required_fields||[]).map(x=>`<span class="pill pill-required">${x}</span>`).join('') : '<span class="pill pill-required">暂无</span>')}</div></div></div></div>`).join('');
+        document.querySelectorAll('[data-dept-card]').forEach(card=>card.classList.add('collapsed'));
         document.querySelectorAll('[data-toggle-dept]').forEach(el=>el.addEventListener('click',()=>toggleDept(el.dataset.toggleDept)));
         const summary=aggregateLiubu(currentLiubu);
         renderPills('risk-summary', summary.risks, 'pill-risk', '暂无');
