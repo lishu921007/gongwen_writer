@@ -87,51 +87,15 @@ class SanxingLiubuOrchestrator:
         parts = []
         if retrieval.get('positive_structures'):
             parts.append('结构参考：' + '；'.join(retrieval['positive_structures'][:2]))
-        if retrieval.get('positive_snippets'):
+        if retrieval.get('section_snippets'):
+            parts.append('章节片段参考：' + '；'.join(retrieval['section_snippets'][:4]))
+        elif retrieval.get('positive_snippets'):
             parts.append('片段参考：' + '；'.join(retrieval['positive_snippets'][:2]))
         if retrieval.get('forbidden_rules'):
             parts.append('禁错规则：' + '；'.join(retrieval['forbidden_rules'][:5]))
         if retrieval.get('missing_hints'):
             parts.append('缺项提示：' + '、'.join(retrieval['missing_hints'][:6]))
         return '\n'.join(parts)
-
-    def _dept_support_text(self, key: str, intent: Dict[str, Any], retrieval: Dict[str, Any]) -> str:
-        doc_type = intent.get('target_output_type') or intent.get('primary_doc_type', '')
-        structure = '、'.join(intent.get('structure_suggestion') or [])
-        missing = '、'.join(intent.get('required_hints') or [])
-        confusion = '；'.join(intent.get('confusion_alerts') or [])
-        rules = self._negative_rules_text(doc_type)
-        if key in ['libu', 'hubu', 'bingbu']:
-            parts = [f'目标文种：{doc_type}']
-            if missing:
-                parts.append(f'缺项提示：{missing}')
-            if rules:
-                parts.append(f'禁错规则：{rules}')
-            return '\n'.join(parts)
-        if key == 'libu_ritual':
-            parts = [f'目标文种：{doc_type}']
-            if structure:
-                parts.append(f'结构建议：{structure}')
-            if confusion:
-                parts.append(f'易混淆提醒：{confusion}')
-            if rules:
-                parts.append(f'禁错规则：{rules}')
-            return '\n'.join(parts)
-        if key == 'gongbu':
-            parts = [f'目标文种：{doc_type}']
-            if structure:
-                parts.append(f'结构建议：{structure}')
-            if missing:
-                parts.append(f'必补要素提示：{missing}')
-            return '\n'.join(parts)
-        if key == 'xingbu':
-            parts = [f'目标文种：{doc_type}']
-            if confusion:
-                parts.append(f'易混淆提醒：{confusion}')
-            if rules:
-                parts.append(f'禁错规则：{rules}')
-            return '\n'.join(parts)
-        return ''
 
     def _classify_and_retrieve(self, text: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
         intent = self.classifier.classify(text).to_dict()
@@ -157,6 +121,70 @@ class SanxingLiubuOrchestrator:
                 return None
         return None
 
+    def _split_input_blocks(self, text: str) -> List[str]:
+        raw_blocks = []
+        for part in text.replace('\r', '\n').split('\n'):
+            s = part.strip()
+            if s:
+                raw_blocks.append(s)
+        if len(raw_blocks) <= 1:
+            merged = [x.strip() for x in text.replace('。', '。\n').replace('；', '；\n').splitlines() if x.strip()]
+            return merged[:20]
+        return raw_blocks[:30]
+
+    def _pick_relevant_blocks(self, key: str, text: str, context: str = '') -> List[str]:
+        blocks = self._split_input_blocks(text)
+        if context:
+            blocks += [f'补充上下文：{x}' for x in self._split_input_blocks(context)[:10]]
+        keyword_map = {
+            'libu': ['主送', '发给', '报送', '单位', '对象', '部门', '单位', '区委', '宣传部'],
+            'hubu': ['时间', '地点', '联系人', '电话', '附件', '报名', '截止', '流程', '要求', '形式', '数据'],
+            'libu_ritual': ['标题', '通知', '请示', '函', '纪要', '讲话', '宣讲', '材料', '主题'],
+            'bingbu': ['流程', '步骤', '报名', '要求', '责任', '推进', '落实', '参赛', '赛事'],
+            'xingbu': ['政治', '维护', '确立', '意识', '自信', '安全', '风险', '不得', '合规'],
+            'gongbu': ['一、', '二、', '三、', '四、', '五、', '六、', '结构', '框架', '标题'],
+        }
+        keywords = keyword_map.get(key, [])
+        selected = []
+        for block in blocks:
+            if any(k in block for k in keywords):
+                selected.append(block)
+        if not selected:
+            selected = blocks[:6]
+        dedup = []
+        for item in selected:
+            if item not in dedup:
+                dedup.append(item)
+        return dedup[:8]
+
+    def _dept_support_text(self, key: str, intent: Dict[str, Any], retrieval: Dict[str, Any], text: str, context: str = '') -> str:
+        doc_type = intent.get('target_output_type') or intent.get('primary_doc_type', '')
+        structure = '、'.join(intent.get('structure_suggestion') or [])
+        missing = '、'.join(intent.get('required_hints') or [])
+        confusion = '；'.join(intent.get('confusion_alerts') or [])
+        rules = self._negative_rules_text(doc_type)
+        blocks = self._pick_relevant_blocks(key, text, context)
+        parts = [f'目标文种：{doc_type}']
+        if key in ['libu', 'hubu', 'bingbu'] and missing:
+            parts.append(f'缺项提示：{missing}')
+        if key == 'libu_ritual':
+            if structure:
+                parts.append(f'结构建议：{structure}')
+            if confusion:
+                parts.append(f'易混淆提醒：{confusion}')
+        if key == 'gongbu':
+            if structure:
+                parts.append(f'结构建议：{structure}')
+            if missing:
+                parts.append(f'必补要素提示：{missing}')
+        if key == 'xingbu' and confusion:
+            parts.append(f'易混淆提醒：{confusion}')
+        if rules:
+            parts.append(f'禁错规则：{rules}')
+        parts.append('相关输入片段：')
+        parts.extend([f'- {b}' for b in blocks])
+        return '\n'.join(parts)
+
     def _fallback_dept(self, key: str, text: str) -> Dict[str, Any]:
         cfg = self.dept_config[key]
         judgment = self.fallback_messages.get('dept_default_judgment', '已介入审看。')
@@ -174,8 +202,8 @@ class SanxingLiubuOrchestrator:
             key_risks = ['主送范围错位']
         elif key == 'hubu':
             judgment = '关键要素存在但仍不完整。'
-            findings = '时间节点、报送名单等要素可能已有，但联系人、地点、报送方式、附件常见缺失。'
-            advice = '补齐时间、地点、联系人、报送渠道、附件表单等操作性要素。'
+            findings = '时间节点、联系人、报送方式、附件等可能缺失。'
+            advice = '补齐时间、联系人、报送渠道、附件表单等操作性要素。'
             risks = '若关键要素缺失，文稿可执行性会明显下降。'
             required_fields = ['时间节点', '联系人', '报送方式']
             key_risks = ['关键要素缺失']
@@ -188,8 +216,8 @@ class SanxingLiubuOrchestrator:
             key_risks = ['文种体例错配']
         elif key == 'bingbu':
             judgment = '执行要求需要单列强化。'
-            findings = '涉及报送、落实、反馈、推进等动作时，应突出时限、动作、责任和闭环。'
-            advice = '定稿时强化时限、责任、报送动作、反馈路径与督办要求。'
+            findings = '涉及流程、报名、落实、推进等动作时，应突出时限、动作、责任和闭环。'
+            advice = '定稿时强化时限、动作步骤、责任分工与落地路径。'
             risks = '执行要求不清会影响落地。'
             required_fields = ['截止时间', '执行动作', '责任分工']
             key_risks = ['执行闭环不足']
@@ -227,16 +255,14 @@ class SanxingLiubuOrchestrator:
 
     def _dept(self, key: str, text: str, intent: Dict[str, Any], retrieval: Dict[str, Any], context: str = '') -> Dict[str, Any]:
         cfg = self.dept_config[key]
-        support = self._dept_support_text(key, intent, retrieval)
+        support = self._dept_support_text(key, intent, retrieval, text, context)
         prompt = (
             f'你现在扮演三省六部中的{cfg["name"]}。职责：{cfg["duty"]}{cfg["focus"]}{cfg["deep_focus"]}'
             '请只基于给定需求和上下文进行专业审看，不要编造事实。'
             '请严格输出 JSON，不要输出 Markdown 代码块，结构如下：'
             '{"judgment":"...","findings":"...","advice":"...","risks":"...",'
             '"required_fields":["..."],"key_risks":["..."]}'
-            + (f'\n\n辅助信息：\n{support}' if support else '')
-            + f'\n\n用户需求：{text}'
-            + (f'\n\n补充上下文：{context}' if context else '')
+            f'\n\n{support}'
         )
         result = self.workflow.run(task=f'dept-{cfg["name"]}', prompt=prompt, timeout_seconds=self.DEPT_TIMEOUTS.get(key, 40)).to_dict()
         data = self._parse_json_block(result.get('text') or '')
@@ -293,10 +319,9 @@ class SanxingLiubuOrchestrator:
     def _zhongshu_plan_external(self, text: str, intent: Dict[str, Any], retrieval: Dict[str, Any]) -> Dict[str, Any]:
         doc_type = intent.get('target_output_type') or intent.get('primary_doc_type', '未知')
         prompt = (
-            '你现在扮演中书省的起草前判断官。'
-            '请只做起草前判断，不写正文。'
-            '请严格输出 JSON，不要输出 Markdown 代码块，结构如下：'
-            '{"doc_type":"...","target_audience":"...","structure_outline":["..."],"missing_elements":["..."]}'
+            '你现在扮演中书省的起草前判断官。只做起草前判断，不写正文。'
+            '请尽量输出 JSON；若无法严格 JSON，也要清楚写出文种、对象、结构骨架、缺失要素。'
+            '目标结构：{"doc_type":"...","target_audience":"...","structure_outline":["..."],"missing_elements":["..."]}'
             f'\n\n目标输出文种：{doc_type}'
             + ('\n结构建议：' + '、'.join(intent.get('structure_suggestion') or []) if intent.get('structure_suggestion') else '')
             + ('\n易混淆提醒：' + '；'.join(intent.get('confusion_alerts') or []) if intent.get('confusion_alerts') else '')
@@ -329,8 +354,7 @@ class SanxingLiubuOrchestrator:
         doc_type = intent.get('target_output_type') or intent.get('primary_doc_type', '未知')
         prompt = (
             '你现在扮演中书省，负责正式起草。'
-            '请根据起草前判断卡，输出一版正式可用的完整正文。'
-            '只输出正文，不要解释，不要输出 JSON。'
+            '请根据起草前判断卡，输出一版正式可用的完整正文。只输出正文，不要解释。'
             f'\n\n目标输出文种：{doc_type}'
             + f'\n起草前判断卡：文种={plan.get("doc_type", doc_type)}；对象={plan.get("target_audience", "待明确")}；结构骨架={"、".join(plan.get("structure_outline") or [])}；缺失要素提醒={"、".join(plan.get("missing_elements") or []) or "暂无"}'
             + (f'\n\n轻量语料参考：\n{self._retrieval_text(retrieval)}' if self._retrieval_text(retrieval) else '')
@@ -364,8 +388,7 @@ class SanxingLiubuOrchestrator:
         doc_type = intent.get('target_output_type') or intent.get('primary_doc_type', '未知')
         prompt = (
             '你现在扮演尚书省，负责统稿定稿。当前为模式A：正式定稿。'
-            '请严格吸收中书省初稿、门下省封驳意见和六部意见，输出最终正文。'
-            '只输出最终正文，不要解释。'
+            '请严格吸收中书省初稿、门下省封驳意见和六部意见，输出最终正文。只输出最终正文，不要解释。'
             f'\n\n目标输出文种：{doc_type}'
             + ('\n结构建议：' + '、'.join(intent.get('structure_suggestion') or []) if intent.get('structure_suggestion') else '')
             + (f'\n\n轻量语料参考：\n{self._retrieval_text(retrieval)}' if self._retrieval_text(retrieval) else '')
@@ -380,8 +403,7 @@ class SanxingLiubuOrchestrator:
         doc_type = intent.get('target_output_type') or intent.get('primary_doc_type', '未知')
         prompt = (
             '你现在扮演尚书省，负责审校汇总。当前为模式B：审校汇总。'
-            '请不要重写正文，只输出问题清单式结果。'
-            '输出结构固定为：一、审校结论 二、必须修改项 三、建议优化项 四、风险提示。'
+            '请不要重写正文，只输出问题清单式结果。输出结构固定为：一、审校结论 二、必须修改项 三、建议优化项 四、风险提示。'
             f'\n\n目标输出文种：{doc_type}'
             + (f'\n\n轻量语料参考：\n{self._retrieval_text(retrieval)}' if self._retrieval_text(retrieval) else '')
             + f'\n\n起草前判断卡：{zhongshu.get("plan", {})}'
