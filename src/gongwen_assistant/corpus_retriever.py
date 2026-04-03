@@ -66,13 +66,36 @@ class CorpusRetriever:
                 rules.append(line[2:].strip())
         return rules
 
+    def _clean_markdown_for_prompt(self, text: str) -> str:
+        lines = []
+        in_frontmatter = False
+        frontmatter_seen = 0
+        for raw in text.splitlines():
+            line = raw.rstrip()
+            if line.strip() == '---' and frontmatter_seen < 2:
+                frontmatter_seen += 1
+                in_frontmatter = not in_frontmatter
+                continue
+            if in_frontmatter:
+                continue
+            if line.startswith('- 来源') or line.startswith('- 文种') or line.startswith('- 来源链接') or line.startswith('- 抓取时间'):
+                continue
+            if line.startswith('source_url:') or line.startswith('source_domain:') or line.startswith('publisher:') or line.startswith('capture_date:') or line.startswith('corpus_id:') or line.startswith('title:') or line.startswith('doc_type:'):
+                continue
+            if not line.strip():
+                continue
+            lines.append(line.strip())
+        cleaned = '\n'.join(lines)
+        cleaned = cleaned.replace('# ', '').replace('## ', '')
+        return cleaned[:320]
+
     def retrieve(self, doc_type: str) -> CorpusRetrievalResult:
         index = self._load_index()
         matched = [x for x in index if x.get('doc_type') == doc_type and x.get('status') in ['active', 'limited']]
         matched_ids = [x.get('corpus_id', '') for x in matched[:5] if x.get('corpus_id')]
         structures = []
         snippets = []
-        for item in matched[:3]:
+        for item in matched[:2]:
             clean_path = item.get('clean_path')
             if clean_path:
                 p = self.root / 'corpus' / clean_path
@@ -81,12 +104,12 @@ class CorpusRetriever:
                     if '## 结构特征' in txt:
                         sec = txt.split('## 结构特征', 1)[1]
                         sec = sec.split('##', 1)[0]
-                        structures.append(sec.strip()[:400])
-                    snippets.append(txt[:280].strip())
+                        structures.append(self._clean_markdown_for_prompt(sec))
+                    snippets.append(self._clean_markdown_for_prompt(txt))
         return CorpusRetrievalResult(
             doc_type=doc_type,
-            positive_structures=structures[:3],
-            positive_snippets=snippets[:3],
+            positive_structures=structures[:2],
+            positive_snippets=snippets[:2],
             forbidden_rules=self._load_forbidden_rules(doc_type),
             missing_hints=[],
             matched_corpus_ids=matched_ids,
