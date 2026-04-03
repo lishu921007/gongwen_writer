@@ -79,3 +79,16 @@ sources:
     allowed_layers: [source, snippet]
     preferred_doc_types: [工作总结, 工作计划, 汇报材料]
     capture_notes: 优先采集部门计划和总结栏目，可作为基层综合总结样板。
+
+  - domain: www.shhuangpu.gov.cn
+    source_level: 一级
+    owner: 黄浦区人民政府门户网站
+    allowed_layers: [source, snippet]
+    preferred_doc_types: [通报, 通知, 决定]
+    capture_notes: 地方党政系统正式公文页可作为通报类候选，但需确认正文抓取稳定性。
+  - domain: zsjgj.zhoushan.gov.cn
+    source_level: 一级
+    owner: 舟山市机关事务管理中心
+    allowed_layers: [source, snippet]
+    preferred_doc_types: [通报, 通知]
+    capture_notes: 适合作为机关事务系统通报样板来源，若站点稳定性差需先固化原件。

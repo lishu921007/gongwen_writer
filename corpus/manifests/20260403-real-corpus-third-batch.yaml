@@ -1,0 +1,18 @@
+batch_id: 20260403-real-corpus-third-batch
+source_scope: 用户补充的真实公开语料链接（第三批）
+capture_date: 2026-04-03
+operator: openclaw-main
+manifest_version: v0.4-real-ingestion
+item_count: 5
+output_paths:
+  - corpus/raw/gov-cn/2024-06/gw-tongzhi-20240603-001.raw.txt
+  - corpus/clean/by-doc-type/通知/gw-tongzhi-20240603-001.md
+  - corpus/raw/gov-cn/2024-03/gw-tongzhi-20240322-001.raw.txt
+  - corpus/clean/by-doc-type/通知/gw-tongzhi-20240322-001.md
+  - corpus/raw/gov-cn/2024-12/gw-han-20241206-001.raw.txt
+  - corpus/clean/by-doc-type/函/gw-han-20241206-001.md
+  - corpus/excerpts/positive/请示/请示-收悉引述-结构参考.md
+  - corpus/pending/20260403-real-corpus-third-batch-followup.md
+notes: |
+  本批次已落地两篇通知和一篇函，并补充一条“请示结构参考”摘录。
+  两条地方通报因抓取受限暂挂 pending，后续可用人工拷贝、浏览器接管或备用来源继续补齐。
