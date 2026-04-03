@@ -308,13 +308,21 @@ class SanxingLiubuOrchestrator:
         result = self.workflow.run(task='zhongshu-plan', prompt=prompt, timeout_seconds=45).to_dict()
         data = self._parse_json_block(result.get('text') or '')
         if not isinstance(data, dict):
-            raise GongwenError(code='agent_parse_failed', message='中书省起草前判断解析失败', stage='zhongshu-plan', upstream='openclaw agent')
+            return {
+                'doc_type': doc_type,
+                'target_audience': '待明确',
+                'structure_outline': intent.get('structure_suggestion') or [],
+                'missing_elements': intent.get('required_hints') or [],
+                'text': '',
+                'fallback': True,
+            }
         return {
             'doc_type': str(data.get('doc_type') or doc_type),
             'target_audience': str(data.get('target_audience') or '待明确'),
             'structure_outline': [str(x).strip() for x in (data.get('structure_outline') or []) if str(x).strip()][:8] or (intent.get('structure_suggestion') or []),
             'missing_elements': [str(x).strip() for x in (data.get('missing_elements') or []) if str(x).strip()][:8] or (intent.get('required_hints') or []),
             'text': '',
+            'fallback': False,
         }
 
     def _zhongshu_draft_external(self, text: str, intent: Dict[str, Any], retrieval: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
