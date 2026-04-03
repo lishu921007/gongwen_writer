@@ -138,6 +138,9 @@
       .pill-risk { background:var(--danger-soft); color:var(--danger); }
       .pill-required { background:var(--warn-soft); color:var(--warn); }
       .workflow-note { margin-top:10px; color:var(--muted); font-size:12px; }
+      .plan-card { margin-bottom:14px; padding:14px; border-radius:18px; border:1px solid rgba(37,99,235,.14); background:rgba(37,99,235,.05); }
+      .plan-title { font-size:13px; font-weight:800; color:#1d4ed8; margin-bottom:8px; }
+      .plan-row { font-size:12px; line-height:1.7; color:#334155; }
       .workflow-grid, .dept-grid { display:grid; gap:14px; }
       .workflow-card .head, .dept-card .head {
         padding:12px 14px; font-weight:800; border-bottom:1px solid rgba(148,163,184,.12);
@@ -300,8 +303,9 @@
               <div class="stage-pane" id="stage-process">
                 <div class="flow-card" style="margin-bottom:14px;">
                   <div class="flow-title">工作流说明</div>
-                  <div class="flow-desc">输入任务 → 生成最终稿 → 需要时再改稿或审校 → 最后回看中书省、门下省、尚书省过程。</div>
+                  <div class="flow-desc">输入任务 → 中书省先做起草前判断 → 中书省起草 → 门下省封驳审读 → 尚书省按模式定稿/汇总。</div>
                 </div>
+                <div class="plan-card" id="zhongshu-plan-card"><div class="plan-title">中书省起草前判断卡</div><div class="plan-row">提交后将在这里显示文种判断、目标对象、结构骨架和缺失要素提醒。</div></div>
                 <div class="workflow-grid" id="workflow-section">
                   <div class="workflow-card"><div class="head">中书省初稿 / 底稿</div><div class="body" id="draft-pane">提交后将在这里显示中书省初稿。</div></div>
                   <div class="workflow-card"><div class="head">门下省审读意见</div><div class="body" id="review-pane">提交后将在这里显示门下省审读意见。</div></div>
@@ -383,7 +387,7 @@
         $('error-card').innerHTML = `<div class="error-card"><div class="error-title">${title}</div><div class="error-row"><b>提示：</b>${data?.error || '请求失败'}</div>${data?.error_stage ? `<div class="error-row"><b>阶段：</b>${data.error_stage}</div>` : ''}${data?.error_upstream ? `<div class="error-row"><b>上游：</b>${data.error_upstream}</div>` : ''}${data?.error_detail ? `<div class="error-row"><b>详情：</b>${data.error_detail}</div>` : ''}</div>`;
       }
       async function postJson(url,payload){ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok||!data.ok) { const err = new Error(data.error||'请求失败'); err.payload = data; throw err; } return data; }
-      function applyOrchestratorResult(data, modeLabel){ clearErrorCard(); const result = data.result; currentDraft = result.shangshu?.text || result.zhongshu?.text || ''; setBox('draft-pane', result.zhongshu?.text || '无输出'); setBox('review-pane', result.menxia?.text || '无输出'); setBox('revise-pane', result.shangshu?.text || '无输出'); setOutput(result.shangshu?.text || '无输出'); setMetric([['处理模式',modeLabel],['当前状态','已完成'],['主文种',result.intent?.primary_doc_type || '未识别'],['置信度',String(result.intent?.confidence ?? '—')],['尚书省','已参与'],['六部','全部接入']]); renderDepartments(result.liubu || {}); renderPills('intent-summary', [result.intent?.primary_doc_type || '未识别', ...((result.intent?.secondary_doc_types||[]).slice(0,2))], '', '暂无'); const evalList = result.evaluation ? [`文种${result.evaluation.doc_type_match_score}`, `要素${result.evaluation.completeness_score}`, `结构${result.evaluation.structure_score}`, `交付${result.evaluation.deliverability_score}`] : []; renderPills('evaluation-summary', evalList, '', '暂无'); setActiveStage('final'); $('status').textContent='已生成。'; }
+      function applyOrchestratorResult(data, modeLabel){ clearErrorCard(); const result = data.result; currentDraft = result.shangshu?.text || result.zhongshu?.text || ''; setBox('draft-pane', result.zhongshu?.text || '无输出'); setBox('review-pane', result.menxia?.text || '无输出'); setBox('revise-pane', result.shangshu?.text || '无输出'); const plan = result.zhongshu?.plan || {}; $('zhongshu-plan-card').innerHTML = `<div class="plan-title">中书省起草前判断卡</div><div class="plan-row"><b>文种判断：</b>${plan.doc_type || '未识别'}</div><div class="plan-row"><b>目标对象：</b>${plan.target_audience || '待明确'}</div><div class="plan-row"><b>结构骨架：</b>${(plan.structure_outline||[]).join('、') || '暂无'}</div><div class="plan-row"><b>缺失要素提醒：</b>${(plan.missing_elements||[]).join('、') || '暂无'}</div>`; setOutput(result.shangshu?.text || '无输出'); setMetric([['处理模式',modeLabel],['当前状态','已完成'],['主文种',result.intent?.primary_doc_type || '未识别'],['置信度',String(result.intent?.confidence ?? '—')],['尚书模式',result.shangshu?.mode || '未标注'],['六部','全部接入']]); renderDepartments(result.liubu || {}); renderPills('intent-summary', [result.intent?.primary_doc_type || '未识别', ...((result.intent?.secondary_doc_types||[]).slice(0,2))], '', '暂无'); const evalList = result.evaluation ? [`文种${result.evaluation.doc_type_match_score}`, `要素${result.evaluation.completeness_score}`, `结构${result.evaluation.structure_score}`, `交付${result.evaluation.deliverability_score}`] : []; renderPills('evaluation-summary', evalList, '', '暂无'); setActiveStage('final'); $('status').textContent='已生成。'; }
 
       async function runMain(){
         const raw=$('input').value.trim(); if(!raw) return $('status').textContent='请先输入内容。';
