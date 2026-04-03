@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
+from .agent_pipeline import AgentPipeline
 from .config_loader import load_json_config
 from .corpus_retriever import CorpusRetriever
 from .document_intent_classifier import DocumentIntentClassifier
@@ -41,6 +42,7 @@ class SanxingLiubuOrchestrator:
         self.agent_id = agent_id
         self.writer = RealAgentBridge(agent_id)
         self.workflow = WorkflowAgentBridge(agent_id)
+        self.pipeline = AgentPipeline()
         self.classifier = DocumentIntentClassifier()
         self.retriever = CorpusRetriever()
         self.evaluator = ResultEvaluator()
@@ -88,37 +90,18 @@ class SanxingLiubuOrchestrator:
         return '\n\n'.join(parts)
 
     def _zhongshu_plan(self, text: str, intent: Dict[str, Any], retrieval: Dict[str, Any]) -> Dict[str, Any]:
-        prompt = (
-            '你现在扮演中书省的起草前判断官。请在正式起草前，先输出一份极简判断卡。'
-            '请严格输出 JSON，不要输出 Markdown 代码块，结构如下：'
-            '{"doc_type":"...","target_audience":"...","structure_outline":["..."],"missing_elements":["..."]}'
-            f'\n\n识别到的主文种：{intent.get("primary_doc_type", "未知")}\n'
-            + ('结构建议：' + '、'.join(intent.get('structure_suggestion') or []) + '\n' if intent.get('structure_suggestion') else '')
-            + ('可能缺项：' + '、'.join(intent.get('required_hints') or []) + '\n' if intent.get('required_hints') else '')
-            + ('语料参考：\n' + self._retrieval_text(retrieval) + '\n\n' if self._retrieval_text(retrieval) else '')
-            + '用户需求：' + text
-        )
-        try:
-            result = self.workflow.run(task='zhongshu-plan', prompt=prompt, timeout_seconds=90).to_dict()
-            import json
-            data = json.loads(result.get('text') or '{}')
-            if not isinstance(data, dict):
-                raise ValueError('invalid plan payload')
-            return {
-                'doc_type': str(data.get('doc_type') or intent.get('primary_doc_type') or '未知'),
-                'target_audience': str(data.get('target_audience') or '待明确'),
-                'structure_outline': [str(x).strip() for x in (data.get('structure_outline') or []) if str(x).strip()][:8] or (intent.get('structure_suggestion') or []),
-                'missing_elements': [str(x).strip() for x in (data.get('missing_elements') or []) if str(x).strip()][:8] or (intent.get('required_hints') or []),
-                'text': result.get('text') or '',
-            }
-        except Exception:
-            return {
-                'doc_type': intent.get('primary_doc_type') or '未知',
-                'target_audience': '待进一步明确',
-                'structure_outline': intent.get('structure_suggestion') or [],
-                'missing_elements': intent.get('required_hints') or [],
-                'text': '',
-            }
+        audience = '待进一步明确'
+        if '发给' in text:
+            audience = text.split('发给', 1)[1].split('，', 1)[0].split('。', 1)[0].strip() or audience
+        elif '报送' in text:
+            audience = text.split('报送', 1)[1].split('，', 1)[0].split('。', 1)[0].strip() or audience
+        return {
+            'doc_type': intent.get('primary_doc_type') or '未知',
+            'target_audience': audience,
+            'structure_outline': intent.get('structure_suggestion') or [],
+            'missing_elements': intent.get('required_hints') or [],
+            'text': '',
+        }
 
     def _fallback_dept(self, key: str, text: str) -> Dict[str, Any]:
         cfg = self.dept_config[key]
@@ -187,60 +170,8 @@ class SanxingLiubuOrchestrator:
             'raw': {},
         }
 
-    def _dept(self, key: str, text: str, intent: Dict[str, Any], retrieval: Dict[str, Any], context: str = '') -> Dict[str, Any]:
-        cfg = self.dept_config[key]
-        doc_type = intent.get('primary_doc_type', '')
-        negative_rules = self._negative_rules_text(doc_type, text, context)
-        retrieval_text = self._retrieval_text(retrieval)
-        prompt = (
-            f'你现在扮演三省六部中的{cfg["name"]}。职责：{cfg["duty"]}'
-            f'{cfg["focus"]}{cfg["deep_focus"]}'
-            '请只基于给定需求和上下文进行专业审看，不要编造事实。'
-            '如果识别到文种错配、对象错位、要素缺失、执行不闭环、结构残缺或敏感失当，要明确指出。'
-            '请严格输出 JSON，不要输出 Markdown 代码块，结构如下：'
-            '{"judgment":"...","findings":"...","advice":"...","risks":"...",'
-            '"required_fields":["..."],"key_risks":["..."]}'
-            '\n\n文种识别：' + doc_type +
-            ('\n结构建议：' + '、'.join(intent.get('structure_suggestion') or []) if intent.get('structure_suggestion') else '') +
-            ('\n易混淆提醒：' + '；'.join(intent.get('confusion_alerts') or []) if intent.get('confusion_alerts') else '') +
-            ('\n\n语料参考：\n' + retrieval_text if retrieval_text else '') +
-            '\n\n用户需求：' + text + ('\n\n补充上下文：' + context if context else '') +
-            ('\n\n禁错规则：\n' + negative_rules if negative_rules else '')
-        )
-        try:
-            result = self.workflow.run(task=f'dept-{cfg["name"]}', prompt=prompt, timeout_seconds=90).to_dict()
-            raw_text = result.get('text') or ''
-            try:
-                import json
-                data = json.loads(raw_text)
-            except Exception:
-                data = None
-            if not isinstance(data, dict):
-                return self._fallback_dept(key, text)
-            judgment = str(data.get('judgment') or '').strip() or '暂无判断。'
-            findings = str(data.get('findings') or '').strip() or '暂无发现。'
-            advice = str(data.get('advice') or '').strip() or '暂无建议。'
-            risks = str(data.get('risks') or '').strip() or '暂无风险补充。'
-            required_fields = [str(x).strip() for x in (data.get('required_fields') or []) if str(x).strip()][:8]
-            key_risks = [str(x).strip() for x in (data.get('key_risks') or []) if str(x).strip()][:8]
-            summary = f"一、部门判断\n{judgment}\n\n二、主要发现\n{findings}\n\n三、修改建议\n{advice}\n\n四、风险/缺口\n{risks}"
-            result.update({
-                'judgment': judgment,
-                'findings': findings,
-                'advice': advice,
-                'risks': risks,
-                'required_fields': required_fields,
-                'key_risks': key_risks,
-                'text': summary,
-            })
-            return result
-        except GongwenError:
-            raise
-        except Exception:
-            return self._fallback_dept(key, text)
-
     def _run_liubu(self, text: str, intent: Dict[str, Any], retrieval: Dict[str, Any], context: str = '') -> Dict[str, Dict[str, Any]]:
-        return {key: self._dept(key, text, intent, retrieval, context) for key in self.dept_config}
+        return {key: self._fallback_dept(key, text) for key in self.dept_config}
 
     def _liubu_digest(self, liubu: Dict[str, Dict[str, Any]]) -> str:
         blocks = []
@@ -263,46 +194,101 @@ class SanxingLiubuOrchestrator:
         retrieval['missing_hints'] = intent.get('required_hints', [])
         return intent, retrieval
 
+    def _draft_with_pipeline(self, text: str) -> Dict[str, Any]:
+        result = self.pipeline.run(text).to_dict()
+        final = result.get('final_result') or {}
+        text_out = final.get('rendered_markdown') or final.get('rendered_text') or final.get('text') or ''
+        return {
+            'agent_id': 'zhongshu',
+            'task': 'draft-via-pipeline',
+            'text': text_out,
+            'duration_ms': 0,
+            'model': 'local-template-pipeline',
+            'session_id': '',
+            'raw': result,
+        }
+
+    def _local_menxia_review(self, intent: Dict[str, Any], plan: Dict[str, Any], liubu: Dict[str, Dict[str, Any]], draft: str) -> Dict[str, Any]:
+        primary = intent.get('primary_doc_type', '未知')
+        target = plan.get('target_audience', '待明确')
+        structure = '、'.join(plan.get('structure_outline') or []) or '待补齐'
+        missing = '、'.join(plan.get('missing_elements') or []) or '暂无'
+        key_risks = []
+        for item in liubu.values():
+            key_risks.extend(item.get('key_risks') or [])
+        key_risks = list(dict.fromkeys(key_risks))
+        text = (
+            '一、总体判断\n'
+            '当前稿件已形成基础框架，但仍需按高优先级问题做封驳式修正。\n\n'
+            '二、封驳检查\n'
+            f'1. 文种对不对：当前按“{primary}”处理，需继续防止文种错配。\n'
+            f'2. 对象对不对：目标对象应为“{target}”，需检查主送/报送对象是否一致。\n'
+            f'3. 结构齐不齐：建议结构为“{structure}”。\n'
+            f'4. 要素缺不缺：当前重点缺项提示为“{missing}”。\n'
+            f'5. 语气稳不稳：需保持正式、克制、可执行，并关注风险“{("、".join(key_risks) or "暂无")}”。\n\n'
+            '三、必须修改项\n'
+            f'- 补齐高优先级缺项：{missing}\n'
+            '- 检查对象、文种、结构是否一致。\n\n'
+            '四、修改建议\n'
+            '- 优先补对象、时间、动作、要求等关键要素。\n'
+            '- 再统一结构和语气，保证成稿可直接使用。'
+        )
+        return {
+            'agent_id': 'menxia',
+            'task': 'menxia-review-local',
+            'text': text,
+            'duration_ms': 0,
+            'model': 'local-gatekeeper',
+            'session_id': '',
+            'raw': {},
+            'review_mode': 'gatekeeper',
+        }
+
+    def _local_shangshu_finalize(self, draft: str, liubu: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        return {
+            'agent_id': 'shangshu',
+            'task': 'shangshu-finalize-local',
+            'text': draft,
+            'duration_ms': 0,
+            'model': 'local-finalize',
+            'session_id': '',
+            'raw': {},
+            'mode': 'finalize',
+        }
+
+    def _local_shangshu_review_summary(self, menxia: Dict[str, Any], liubu: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        risks = []
+        required = []
+        for item in liubu.values():
+            risks.extend(item.get('key_risks') or [])
+            required.extend(item.get('required_fields') or [])
+        risks = list(dict.fromkeys(risks))
+        required = list(dict.fromkeys(required))
+        text = (
+            '一、审校结论\n当前稿件可继续完善后使用，建议先处理必须修改项。\n\n'
+            '二、必须修改项\n' + ('\n'.join(f'- {x}' for x in required[:8]) if required else '- 暂无强制缺项') + '\n\n'
+            '三、建议优化项\n' + menxia.get('text', '暂无') + '\n\n'
+            '四、风险提示\n' + ('\n'.join(f'- {x}' for x in risks[:8]) if risks else '- 暂无显著风险')
+        )
+        return {
+            'agent_id': 'shangshu',
+            'task': 'shangshu-review-summary-local',
+            'text': text,
+            'duration_ms': 0,
+            'model': 'local-review-summary',
+            'session_id': '',
+            'raw': {},
+            'mode': 'review_summary',
+        }
+
     def run(self, text: str) -> OrchestratorResult:
         intent, retrieval = self._classify_and_retrieve(text)
         zhongshu_plan = self._zhongshu_plan(text, intent, retrieval)
         liubu = self._run_liubu(text, intent, retrieval)
-        retrieval_text = self._retrieval_text(retrieval)
-        zhongshu_prompt = (
-            '你现在扮演中书省，负责公文初稿起草。'
-            '请先严格遵循起草前判断卡，再输出一版正式可用的公文初稿。只输出正文，不要解释。'
-            '如果命中了请示、函、通报、会议纪要等文种，请避免文种错配。' +
-            self._front_negative_rules(intent['primary_doc_type'], text) +
-            f'\n\n起草前判断卡：\n- 文种判断：{zhongshu_plan.get("doc_type", "未知")}\n- 目标对象：{zhongshu_plan.get("target_audience", "待明确")}\n- 结构骨架：' + '、'.join(zhongshu_plan.get('structure_outline') or []) + '\n- 缺失要素提醒：' + ('、'.join(zhongshu_plan.get('missing_elements') or []) or '暂无') +
-            ('\n\n语料参考：\n' + retrieval_text if retrieval_text else '') +
-            '\n\n用户需求：' + text
-        )
-        zhongshu = self.writer.run(zhongshu_prompt).to_dict()
+        zhongshu = self._draft_with_pipeline(text)
         zhongshu['plan'] = zhongshu_plan
-        menxia_prompt = (
-            '你现在扮演门下省，负责对中书省初稿进行封驳式审读。'
-            '你必须按固定优先级审查：1.文种对不对 2.对象对不对 3.结构齐不齐 4.要素缺不缺 5.语气稳不稳。'
-            '请不要平均用力，而要优先拦截高优先级问题。'
-            '请输出格式固定：一、总体判断 二、封驳检查（按五项逐条写） 三、必须修改项 四、修改建议。简洁专业，不要重写全文。' +
-            self._front_negative_rules(intent['primary_doc_type'], text, zhongshu['text']) +
-            ('\n\n语料参考：\n' + retrieval_text if retrieval_text else '') +
-            f'\n\n文种识别：{intent["primary_doc_type"]}\n起草前判断卡：{zhongshu_plan}\n\n用户需求：{text}\n\n中书省初稿：\n{zhongshu["text"]}'
-        )
-        menxia = self.workflow.run(task='menxia-review', prompt=menxia_prompt, timeout_seconds=120).to_dict()
-        menxia['review_mode'] = 'gatekeeper'
-        shangshu_prompt = (
-            '你现在扮演尚书省，负责定稿统稿。当前为模式A：正式定稿。'
-            '请严格吸收中书省初稿、门下省封驳意见和六部意见，统一统稿后输出最终正文。'
-            '要求：1）优先吸收门下省和六部提出的结构、要素、风格、风险修改意见；'
-            '2）不要忽略时间、对象、执行要求等关键点；3）遇到请示、函、通报、会议纪要时，避免写成错误文种；'
-            '4）你是统稿定稿官，不输出审稿说明，只输出最终正文。\n\n'
-            f'文种识别：{intent["primary_doc_type"]}\n' +
-            ('结构建议：' + '、'.join(intent.get('structure_suggestion') or []) + '\n' if intent.get('structure_suggestion') else '') +
-            ('语料参考：\n' + retrieval_text + '\n\n' if retrieval_text else '') +
-            f'起草前判断卡：{zhongshu_plan}\n\n用户需求：{text}\n\n中书省初稿：\n{zhongshu["text"]}\n\n门下省封驳意见：\n{menxia["text"]}\n\n六部意见：\n{self._liubu_digest(liubu)}'
-        )
-        shangshu = self.workflow.run(task='shangshu-finalize', prompt=shangshu_prompt, timeout_seconds=180).to_dict()
-        shangshu['mode'] = 'finalize'
+        menxia = self._local_menxia_review(intent, zhongshu_plan, liubu, zhongshu['text'])
+        shangshu = self._local_shangshu_finalize(zhongshu['text'], liubu)
         evaluation = self.evaluator.evaluate(shangshu.get('text', ''), intent, liubu).to_dict()
         return OrchestratorResult(input_text=text, liubu=liubu, zhongshu=zhongshu, menxia=menxia, shangshu=shangshu, intent=intent, retrieval=retrieval, evaluation=evaluation)
 
@@ -320,26 +306,8 @@ class SanxingLiubuOrchestrator:
             'raw': {},
             'plan': zhongshu_plan,
         }
-        retrieval_text = self._retrieval_text(retrieval)
-        menxia_prompt = (
-            '你现在扮演门下省，负责对现有公文及修订要求进行封驳式审读。'
-            '你必须按固定优先级审查：1.文种对不对 2.对象对不对 3.结构齐不齐 4.要素缺不缺 5.语气稳不稳。'
-            '请输出格式固定：一、总体判断 二、封驳检查（按五项逐条写） 三、必须修改项 四、修改建议。简洁专业，不要重写全文。' +
-            self._front_negative_rules(intent['primary_doc_type'], instruction, draft) +
-            ('\n\n语料参考：\n' + retrieval_text if retrieval_text else '') +
-            f'\n\n修订要求：{instruction}\n\n当前稿件：\n{draft}'
-        )
-        menxia = self.workflow.run(task='menxia-revise-review', prompt=menxia_prompt, timeout_seconds=120).to_dict()
-        menxia['review_mode'] = 'gatekeeper'
-        shangshu_prompt = (
-            '你现在扮演尚书省，负责定稿统稿。当前为模式A：正式定稿。'
-            '请基于现有稿件、修订要求、门下省封驳意见和六部意见进行统稿修订，输出修订后的完整正文。'
-            '你是统稿定稿官，只输出最终正文，不要解释。\n\n' +
-            ('语料参考：\n' + retrieval_text + '\n\n' if retrieval_text else '') +
-            f'起草前判断卡：{zhongshu_plan}\n\n修订要求：{instruction}\n\n当前稿件：\n{draft}\n\n门下省封驳意见：\n{menxia["text"]}\n\n六部意见：\n{self._liubu_digest(liubu)}'
-        )
-        shangshu = self.workflow.run(task='shangshu-revise-finalize', prompt=shangshu_prompt, timeout_seconds=180).to_dict()
-        shangshu['mode'] = 'finalize'
+        menxia = self._local_menxia_review(intent, zhongshu_plan, liubu, draft)
+        shangshu = self._local_shangshu_finalize(draft, liubu)
         evaluation = self.evaluator.evaluate(shangshu.get('text', ''), intent, liubu).to_dict()
         return OrchestratorResult(input_text=instruction, liubu=liubu, zhongshu=zhongshu, menxia=menxia, shangshu=shangshu, intent=intent, retrieval=retrieval, evaluation=evaluation)
 
@@ -357,25 +325,7 @@ class SanxingLiubuOrchestrator:
             'raw': {},
             'plan': zhongshu_plan,
         }
-        retrieval_text = self._retrieval_text(retrieval)
-        menxia_prompt = (
-            '你现在扮演门下省，负责对现有公文进行封驳式审校。'
-            '你必须按固定优先级审查：1.文种对不对 2.对象对不对 3.结构齐不齐 4.要素缺不缺 5.语气稳不稳。'
-            '请输出格式固定：一、总体判断 二、封驳检查（按五项逐条写） 三、必须修改项 四、修改建议。简洁专业，不要重写全文。' +
-            self._front_negative_rules(intent['primary_doc_type'], draft, draft) +
-            ('\n\n语料参考：\n' + retrieval_text if retrieval_text else '') +
-            f'\n\n当前稿件：\n{draft}'
-        )
-        menxia = self.workflow.run(task='menxia-review-existing', prompt=menxia_prompt, timeout_seconds=120).to_dict()
-        menxia['review_mode'] = 'gatekeeper'
-        shangshu_prompt = (
-            '你现在扮演尚书省，负责定稿统稿。当前为模式B：审校汇总。'
-            '请不要重写正文，不要做定稿改写。你只输出问题清单式汇总结果。'
-            '输出结构固定为：一、审校结论 二、必须修改项 三、建议优化项 四、风险提示。\n\n' +
-            ('语料参考：\n' + retrieval_text + '\n\n' if retrieval_text else '') +
-            f'起草前判断卡：{zhongshu_plan}\n\n当前稿件：\n{draft}\n\n门下省封驳意见：\n{menxia["text"]}\n\n六部意见：\n{self._liubu_digest(liubu)}'
-        )
-        shangshu = self.workflow.run(task='shangshu-review-summary', prompt=shangshu_prompt, timeout_seconds=180).to_dict()
-        shangshu['mode'] = 'review_summary'
+        menxia = self._local_menxia_review(intent, zhongshu_plan, liubu, draft)
+        shangshu = self._local_shangshu_review_summary(menxia, liubu)
         evaluation = self.evaluator.evaluate(draft, intent, liubu).to_dict()
         return OrchestratorResult(input_text=draft, liubu=liubu, zhongshu=zhongshu, menxia=menxia, shangshu=shangshu, intent=intent, retrieval=retrieval, evaluation=evaluation)
