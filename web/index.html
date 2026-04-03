@@ -286,6 +286,14 @@
                     <h3>必补要素</h3>
                     <div class="pill-wrap" id="required-summary"></div>
                   </div>
+                  <div class="summary-card">
+                    <h3>文种识别</h3>
+                    <div class="pill-wrap" id="intent-summary"></div>
+                  </div>
+                  <div class="summary-card">
+                    <h3>结果评估</h3>
+                    <div class="pill-wrap" id="evaluation-summary"></div>
+                  </div>
                 </div>
               </div>
 
@@ -375,7 +383,7 @@
         $('error-card').innerHTML = `<div class="error-card"><div class="error-title">${title}</div><div class="error-row"><b>提示：</b>${data?.error || '请求失败'}</div>${data?.error_stage ? `<div class="error-row"><b>阶段：</b>${data.error_stage}</div>` : ''}${data?.error_upstream ? `<div class="error-row"><b>上游：</b>${data.error_upstream}</div>` : ''}${data?.error_detail ? `<div class="error-row"><b>详情：</b>${data.error_detail}</div>` : ''}</div>`;
       }
       async function postJson(url,payload){ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok||!data.ok) { const err = new Error(data.error||'请求失败'); err.payload = data; throw err; } return data; }
-      function applyOrchestratorResult(data, modeLabel){ clearErrorCard(); const result = data.result; currentDraft = result.shangshu?.text || result.zhongshu?.text || ''; setBox('draft-pane', result.zhongshu?.text || '无输出'); setBox('review-pane', result.menxia?.text || '无输出'); setBox('revise-pane', result.shangshu?.text || '无输出'); setOutput(result.shangshu?.text || '无输出'); setMetric([['处理模式',modeLabel],['当前状态','已完成'],['中书省','已参与'],['门下省','已参与'],['尚书省','已参与'],['六部','全部接入']]); renderDepartments(result.liubu || {}); setActiveStage('final'); $('status').textContent='已生成。'; }
+      function applyOrchestratorResult(data, modeLabel){ clearErrorCard(); const result = data.result; currentDraft = result.shangshu?.text || result.zhongshu?.text || ''; setBox('draft-pane', result.zhongshu?.text || '无输出'); setBox('review-pane', result.menxia?.text || '无输出'); setBox('revise-pane', result.shangshu?.text || '无输出'); setOutput(result.shangshu?.text || '无输出'); setMetric([['处理模式',modeLabel],['当前状态','已完成'],['主文种',result.intent?.primary_doc_type || '未识别'],['置信度',String(result.intent?.confidence ?? '—')],['尚书省','已参与'],['六部','全部接入']]); renderDepartments(result.liubu || {}); renderPills('intent-summary', [result.intent?.primary_doc_type || '未识别', ...((result.intent?.secondary_doc_types||[]).slice(0,2))], '', '暂无'); const evalList = result.evaluation ? [`文种${result.evaluation.doc_type_match_score}`, `要素${result.evaluation.completeness_score}`, `结构${result.evaluation.structure_score}`, `交付${result.evaluation.deliverability_score}`] : []; renderPills('evaluation-summary', evalList, '', '暂无'); setActiveStage('final'); $('status').textContent='已生成。'; }
 
       async function runMain(){
         const raw=$('input').value.trim(); if(!raw) return $('status').textContent='请先输入内容。';
@@ -416,7 +424,7 @@
       document.querySelectorAll('[data-stage]').forEach(btn=>btn.addEventListener('click',()=>setActiveStage(btn.dataset.stage)));
       document.querySelectorAll('[data-side-tab]').forEach(btn=>btn.addEventListener('click',()=>setActiveSideTab(btn.dataset.sideTab)));
 
-      renderQuickPrompts(); renderHistory(); setMetric([['处理模式','等待生成'],['当前状态','待处理'],['中书省','未开始'],['门下省','未开始'],['尚书省','未开始'],['六部','未开始']]); renderPills('risk-summary', [], 'pill-risk', '暂无'); renderPills('required-summary', [], 'pill-required', '暂无');
+      renderQuickPrompts(); renderHistory(); setMetric([['处理模式','等待生成'],['当前状态','待处理'],['主文种','未识别'],['置信度','—'],['尚书省','未开始'],['六部','未开始']]); renderPills('risk-summary', [], 'pill-risk', '暂无'); renderPills('required-summary', [], 'pill-required', '暂无'); renderPills('intent-summary', [], '', '暂无'); renderPills('evaluation-summary', [], '', '暂无');
     </script>
   </body>
 </html>
