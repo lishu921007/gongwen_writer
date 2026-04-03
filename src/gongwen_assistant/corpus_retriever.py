@@ -15,6 +15,8 @@ class CorpusRetrievalResult:
     positive_structures: List[str]
     positive_snippets: List[str]
     section_snippets: List[str]
+    reusable_patterns: List[str]
+    style_guidance: List[str]
     forbidden_rules: List[str]
     missing_hints: List[str]
     matched_corpus_ids: List[str]
@@ -25,6 +27,8 @@ class CorpusRetrievalResult:
             'positive_structures': self.positive_structures,
             'positive_snippets': self.positive_snippets,
             'section_snippets': self.section_snippets,
+            'reusable_patterns': self.reusable_patterns,
+            'style_guidance': self.style_guidance,
             'forbidden_rules': self.forbidden_rules,
             'missing_hints': self.missing_hints,
             'matched_corpus_ids': self.matched_corpus_ids,
@@ -36,6 +40,7 @@ class CorpusRetriever:
         self.root = root or ROOT
         self.index_path = self.root / 'corpus' / 'metadata' / 'corpus-index.jsonl'
         self.forbidden_path = self.root / 'corpus' / 'rules' / 'forbidden-patterns' / '公文文种禁错规则-v0.1.md'
+        self.excerpts_dir = self.root / 'corpus' / 'excerpts' / 'positive'
 
     def _load_index(self) -> List[Dict[str, Any]]:
         items = []
@@ -81,7 +86,7 @@ class CorpusRetriever:
                 continue
             if in_frontmatter:
                 continue
-            if line.startswith('- 来源') or line.startswith('- 文种') or line.startswith('- 来源链接') or line.startswith('- 抓取时间') or line.startswith('- 文号') or line.startswith('- 状态'):
+            if line.startswith('- 来源') or line.startswith('- 文种') or line.startswith('- 来源链接') or line.startswith('- 抓取时间') or line.startswith('- 文号') or line.startswith('- 状态') or line.startswith('- 适用文种') or line.startswith('- 适用章节') or line.startswith('- 是否允许改写') or line.startswith('- 来源文档'):
                 continue
             if re.match(r'^(source_url|source_domain|publisher|capture_date|corpus_id|title|doc_type):', line):
                 continue
@@ -127,10 +132,44 @@ class CorpusRetriever:
         flush()
 
         if not snippets:
-            # fallback: 抓编号/项目式要点
             bullets = [x.lstrip('- ').strip() for x in lines if re.match(r'^(\d+\.|[一二三四五六七八九十]+、|- )', x)]
             snippets.extend([x[:180] for x in bullets[:6]])
         return snippets[:6]
+
+    def _load_excerpts_for_doc_type(self, doc_type: str) -> tuple[List[str], List[str]]:
+        doc_dir = self.excerpts_dir / doc_type
+        if not doc_dir.exists():
+            return [], []
+        reusable_patterns: List[str] = []
+        style_guidance: List[str] = []
+        for p in sorted(doc_dir.glob('*.md'))[:4]:
+            txt = p.read_text(encoding='utf-8')
+            lines = self._strip_metadata_lines(txt)
+            current = None
+            body: List[str] = []
+            for line in lines:
+                if line.startswith('## '):
+                    if current == '可复用结构' and body:
+                        reusable_patterns.extend([x.lstrip('- ').strip() for x in body if x.strip()][:6])
+                    elif current == '可复用表达' and body:
+                        style_guidance.extend([x.lstrip('- ').strip() for x in body if x.strip()][:6])
+                    current = line[3:].strip()
+                    body = []
+                else:
+                    body.append(line)
+            if current == '可复用结构' and body:
+                reusable_patterns.extend([x.lstrip('- ').strip() for x in body if x.strip()][:6])
+            elif current == '可复用表达' and body:
+                style_guidance.extend([x.lstrip('- ').strip() for x in body if x.strip()][:6])
+        # dedup
+        rp, sg = [], []
+        for x in reusable_patterns:
+            if x and x not in rp:
+                rp.append(x)
+        for x in style_guidance:
+            if x and x not in sg:
+                sg.append(x)
+        return rp[:8], sg[:8]
 
     def retrieve(self, doc_type: str) -> CorpusRetrievalResult:
         index = self._load_index()
@@ -162,11 +201,14 @@ class CorpusRetriever:
         for item in section_snippets:
             if item not in dedup_sections:
                 dedup_sections.append(item)
+        reusable_patterns, style_guidance = self._load_excerpts_for_doc_type(doc_type)
         return CorpusRetrievalResult(
             doc_type=doc_type,
             positive_structures=structures[:2],
             positive_snippets=snippets[:2],
             section_snippets=dedup_sections[:6],
+            reusable_patterns=reusable_patterns,
+            style_guidance=style_guidance,
             forbidden_rules=self._load_forbidden_rules(doc_type),
             missing_hints=[],
             matched_corpus_ids=matched_ids,

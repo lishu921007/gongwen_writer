@@ -91,6 +91,10 @@ class SanxingLiubuOrchestrator:
             parts.append('章节片段参考：' + '；'.join(retrieval['section_snippets'][:4]))
         elif retrieval.get('positive_snippets'):
             parts.append('片段参考：' + '；'.join(retrieval['positive_snippets'][:2]))
+        if retrieval.get('reusable_patterns'):
+            parts.append('可复用结构/套路：' + '；'.join(retrieval['reusable_patterns'][:6]))
+        if retrieval.get('style_guidance'):
+            parts.append('优质表达参考：' + '；'.join(retrieval['style_guidance'][:6]))
         if retrieval.get('forbidden_rules'):
             parts.append('禁错规则：' + '；'.join(retrieval['forbidden_rules'][:5]))
         if retrieval.get('missing_hints'):
