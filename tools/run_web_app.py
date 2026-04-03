@@ -17,6 +17,7 @@ from gongwen_assistant import TemplateFillerService  # noqa: E402
 from gongwen_assistant.agent_pipeline import AgentPipeline  # noqa: E402
 from gongwen_assistant.real_agent_bridge import RealAgentBridge  # noqa: E402
 from gongwen_assistant.workflow_agent_bridge import WorkflowAgentBridge  # noqa: E402
+from gongwen_assistant.errors import GongwenError  # noqa: E402
 from gongwen_assistant.sanxing_liubu_orchestrator import SanxingLiubuOrchestrator  # noqa: E402
 from gongwen_assistant.template_filler import TaskCardValidationError  # noqa: E402
 
@@ -96,8 +97,10 @@ class WebHandler(BaseHTTPRequestHandler):
             self._send_json({'error': 'not found'}, HTTPStatus.NOT_FOUND)
         except TaskCardValidationError as exc:
             self._send_json({'ok': False, 'error': str(exc)}, HTTPStatus.BAD_REQUEST)
+        except GongwenError as exc:
+            self._send_json({'ok': False, 'error': exc.message, 'error_type': exc.code, 'error_detail': exc.detail, 'error_stage': exc.stage, 'error_upstream': exc.upstream}, HTTPStatus.BAD_GATEWAY)
         except Exception as exc:  # noqa: BLE001
-            self._send_json({'ok': False, 'error': str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self._send_json({'ok': False, 'error': str(exc), 'error_type': 'internal_error'}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 def main() -> int:

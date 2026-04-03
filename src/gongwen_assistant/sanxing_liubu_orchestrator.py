@@ -86,6 +86,12 @@ class SanxingLiubuOrchestrator:
                 matched.append(f'{k}禁错规则：' + '；'.join(rules))
         return '\n'.join(matched)
 
+    def _front_negative_rules(self, text: str, context: str = '') -> str:
+        rules = self._negative_rules_text(text, context)
+        if not rules:
+            return ''
+        return '\n\n请同时严格遵守以下文种禁错规则：\n' + rules
+
     def _fallback_dept(self, key: str, text: str) -> Dict[str, Any]:
         cfg = self.DEPT_CONFIG[key]
         judgment = f'{cfg["name"]}已介入。'
@@ -222,15 +228,17 @@ class SanxingLiubuOrchestrator:
         zhongshu_prompt = (
             '你现在扮演中书省，负责公文初稿起草。'
             '请综合用户需求，输出一版正式可用的公文初稿。只输出正文，不要解释。'
-            '如果命中了请示、函、通报、会议纪要等文种，请避免文种错配。\n\n'
-            f'用户需求：{text}'
+            '如果命中了请示、函、通报、会议纪要等文种，请避免文种错配。' +
+            self._front_negative_rules(text) +
+            '\n\n用户需求：' + text
         )
         zhongshu = self.writer.run(zhongshu_prompt).to_dict()
         menxia_prompt = (
             '你现在扮演门下省，负责对中书省初稿进行审读驳正。'
             '请重点识别文种错配、对象错位、结构失衡、语气失当、要素缺失。'
-            '输出格式固定：一、总体判断 二、主要问题 三、修改建议。简洁专业，不要重写全文。\n\n'
-            f'用户需求：{text}\n\n中书省初稿：\n{zhongshu["text"]}'
+            '输出格式固定：一、总体判断 二、主要问题 三、修改建议。简洁专业，不要重写全文。' +
+            self._front_negative_rules(text, zhongshu['text']) +
+            f'\n\n用户需求：{text}\n\n中书省初稿：\n{zhongshu["text"]}'
         )
         menxia = self.workflow.run(task='menxia-review', prompt=menxia_prompt, timeout_seconds=120).to_dict()
         shangshu_prompt = (
@@ -258,8 +266,9 @@ class SanxingLiubuOrchestrator:
         menxia_prompt = (
             '你现在扮演门下省，负责对现有公文及修订要求进行联合审读。'
             '请重点检查文种是否跑偏、结构是否失衡、语气是否失当。'
-            '输出格式固定：一、总体判断 二、主要问题 三、修改建议。简洁专业，不要重写全文。\n\n'
-            f'修订要求：{instruction}\n\n当前稿件：\n{draft}'
+            '输出格式固定：一、总体判断 二、主要问题 三、修改建议。简洁专业，不要重写全文。' +
+            self._front_negative_rules(instruction, draft) +
+            f'\n\n修订要求：{instruction}\n\n当前稿件：\n{draft}'
         )
         menxia = self.workflow.run(task='menxia-revise-review', prompt=menxia_prompt, timeout_seconds=120).to_dict()
         shangshu_prompt = (
@@ -284,8 +293,9 @@ class SanxingLiubuOrchestrator:
         menxia_prompt = (
             '你现在扮演门下省，负责对现有公文进行正式审校。'
             '请重点指出文种错配、对象错位、要素缺失、结构问题和语气问题。'
-            '输出格式固定：一、总体判断 二、主要问题 三、修改建议。简洁专业，不要重写全文。\n\n'
-            f'当前稿件：\n{draft}'
+            '输出格式固定：一、总体判断 二、主要问题 三、修改建议。简洁专业，不要重写全文。' +
+            self._front_negative_rules(draft, draft) +
+            f'\n\n当前稿件：\n{draft}'
         )
         menxia = self.workflow.run(task='menxia-review-existing', prompt=menxia_prompt, timeout_seconds=120).to_dict()
         shangshu_prompt = (

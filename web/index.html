@@ -87,6 +87,13 @@
         margin-top:16px; padding:12px 14px; border-radius:14px; background:rgba(248,250,252,.92);
         color:var(--muted); font-size:13px; border:1px dashed rgba(148,163,184,.28);
       }
+      .error-card {
+        margin-top:12px; padding:14px; border-radius:16px; background:rgba(255,255,255,.92);
+        border:1px solid rgba(220,38,38,.18); box-shadow:0 8px 18px rgba(220,38,38,.06);
+      }
+      .error-title { color:var(--danger); font-size:13px; font-weight:800; margin-bottom:8px; }
+      .error-row { font-size:12px; line-height:1.7; color:#475569; }
+      .error-row b { color:#1e293b; }
       .prompt-list, .history-list { display:grid; gap:10px; }
       .prompt-item, .history-item, .metric-card, .workflow-card, .dept-card {
         border:1px solid rgba(148,163,184,.16); border-radius:16px; background:rgba(255,255,255,.74);
@@ -196,6 +203,7 @@
                 <button class="btn-secondary" id="fill-sample">填充示例</button>
               </div>
               <div class="status" id="status">等待输入。建议先生成最终稿，再决定是否改稿或检查。</div>
+              <div id="error-card"></div>
             </div>
           </div>
 
@@ -352,8 +360,22 @@
       function renderHistory(){ const items=getHistory(); if(!items.length){ $('history-list').innerHTML='<div class="history-item"><div class="history-desc">暂无历史记录。</div></div>'; return; } $('history-list').innerHTML=items.map((item,idx)=>`<div class="history-item" data-history-index="${idx}"><div class="history-title">${item.mode==='json'?'任务卡 JSON':'自然语言'} · ${item.at}</div><div class="history-desc">${(item.input||'').slice(0,110)}</div></div>`).join(''); document.querySelectorAll('[data-history-index]').forEach(el=>el.addEventListener('click',()=>{ const item=items[Number(el.dataset.historyIndex)]; $('mode').value=item.mode; $('input').value=item.input; $('status').textContent='已从最近输入恢复内容。'; setActiveSideTab('history'); })); }
       function renderQuickPrompts(){ $('prompt-list').innerHTML=QUICK_PROMPTS.map((item,idx)=>`<div class="prompt-item" data-prompt-index="${idx}"><div class="prompt-title">${item.title}</div><div class="prompt-desc">${item.desc}</div></div>`).join(''); document.querySelectorAll('[data-prompt-index]').forEach(el=>el.addEventListener('click',()=>{ const item=QUICK_PROMPTS[Number(el.dataset.promptIndex)]; $('mode').value='natural'; $('input').value=item.text; $('status').textContent=`已填入常用提示词：${item.title}`; setActiveSideTab('prompts'); })); }
       async function copyText(text,message){ try { await navigator.clipboard.writeText(text||''); $('status').textContent=message; } catch { $('status').textContent='复制失败，请手动复制。'; } }
-      async function postJson(url,payload){ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok||!data.ok) throw new Error(data.error||'请求失败'); return data; }
-      function applyOrchestratorResult(data, modeLabel){ const result = data.result; currentDraft = result.shangshu?.text || result.zhongshu?.text || ''; setBox('draft-pane', result.zhongshu?.text || '无输出'); setBox('review-pane', result.menxia?.text || '无输出'); setBox('revise-pane', result.shangshu?.text || '无输出'); setOutput(result.shangshu?.text || '无输出'); setMetric([['处理模式',modeLabel],['当前状态','已完成'],['中书省','已参与'],['门下省','已参与'],['尚书省','已参与'],['六部','全部接入']]); renderDepartments(result.liubu || {}); setActiveStage('final'); $('status').textContent='已生成。'; }
+      function clearErrorCard(){ $('error-card').innerHTML=''; }
+      function renderErrorCard(data){
+        const typeMap = {
+          agent_call_failed: 'Agent 调用失败',
+          agent_timeout: 'Agent 调用超时',
+          agent_parse_failed: '返回解析失败',
+          empty_output: '未返回有效内容',
+          upstream_config_error: '上游配置异常',
+          internal_error: '内部错误',
+        };
+        const errorType = data?.error_type || 'unknown_error';
+        const title = typeMap[errorType] || '请求失败';
+        $('error-card').innerHTML = `<div class="error-card"><div class="error-title">${title}</div><div class="error-row"><b>提示：</b>${data?.error || '请求失败'}</div>${data?.error_stage ? `<div class="error-row"><b>阶段：</b>${data.error_stage}</div>` : ''}${data?.error_upstream ? `<div class="error-row"><b>上游：</b>${data.error_upstream}</div>` : ''}${data?.error_detail ? `<div class="error-row"><b>详情：</b>${data.error_detail}</div>` : ''}</div>`;
+      }
+      async function postJson(url,payload){ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok||!data.ok) { const err = new Error(data.error||'请求失败'); err.payload = data; throw err; } return data; }
+      function applyOrchestratorResult(data, modeLabel){ clearErrorCard(); const result = data.result; currentDraft = result.shangshu?.text || result.zhongshu?.text || ''; setBox('draft-pane', result.zhongshu?.text || '无输出'); setBox('review-pane', result.menxia?.text || '无输出'); setBox('revise-pane', result.shangshu?.text || '无输出'); setOutput(result.shangshu?.text || '无输出'); setMetric([['处理模式',modeLabel],['当前状态','已完成'],['中书省','已参与'],['门下省','已参与'],['尚书省','已参与'],['六部','全部接入']]); renderDepartments(result.liubu || {}); setActiveStage('final'); $('status').textContent='已生成。'; }
 
       async function runMain(){
         const raw=$('input').value.trim(); if(!raw) return $('status').textContent='请先输入内容。';
@@ -374,11 +396,12 @@
             renderDepartments({}); setActiveStage('final'); $('status').textContent='已生成。';
           }
         } catch (err) {
-          $('status').textContent='生成失败'; setOutput(String(err.message||err)); setBox('draft-pane', String(err.message||err)); setBox('review-pane', '失败'); setBox('revise-pane', '失败'); setMetric([['处理模式','error'],['当前状态','失败'],['中书省','失败'],['门下省','失败'],['尚书省','失败'],['六部','失败']]); renderDepartments({});
+          const payload = err.payload || {};
+          $('status').textContent='生成失败'; setOutput(String(err.message||err)); setBox('draft-pane', String(err.message||err)); setBox('review-pane', '失败'); setBox('revise-pane', '失败'); setMetric([['处理模式','error'],['当前状态','失败'],['中书省','失败'],['门下省','失败'],['尚书省','失败'],['六部','失败']]); renderDepartments({}); renderErrorCard(payload);
         }
       }
-      async function runReview(){ const draft=(currentOutput||currentDraft||'').trim(); if(!draft) return $('status').textContent='当前还没有可检查的稿件。'; $('status').textContent='正在检查当前稿件…'; try { const data = await postJson('/api/review', { draft }); applyOrchestratorResult(data, 'sanxing-liubu-review'); setActiveStage('signals'); } catch (err) { $('status').textContent=`检查失败：${String(err.message||err)}`; } }
-      async function runRevise(){ const draft=(currentOutput||currentDraft||'').trim(); const instruction=$('revise-instruction').value.trim(); if(!draft) return $('status').textContent='当前还没有可重写的稿件。'; if(!instruction) return $('status').textContent='请先填写修改要求。'; $('status').textContent='正在按修改要求重写当前稿件…'; try { const data = await postJson('/api/revise', { draft, instruction }); applyOrchestratorResult(data, 'sanxing-liubu-revise'); setActiveStage('final'); } catch (err) { $('status').textContent=`重写失败：${String(err.message||err)}`; } }
+      async function runReview(){ const draft=(currentOutput||currentDraft||'').trim(); if(!draft) return $('status').textContent='当前还没有可检查的稿件。'; $('status').textContent='正在检查当前稿件…'; clearErrorCard(); try { const data = await postJson('/api/review', { draft }); applyOrchestratorResult(data, 'sanxing-liubu-review'); setActiveStage('signals'); } catch (err) { renderErrorCard(err.payload || {}); $('status').textContent=`检查失败：${String(err.message||err)}`; } }
+      async function runRevise(){ const draft=(currentOutput||currentDraft||'').trim(); const instruction=$('revise-instruction').value.trim(); if(!draft) return $('status').textContent='当前还没有可重写的稿件。'; if(!instruction) return $('status').textContent='请先填写修改要求。'; $('status').textContent='正在按修改要求重写当前稿件…'; clearErrorCard(); try { const data = await postJson('/api/revise', { draft, instruction }); applyOrchestratorResult(data, 'sanxing-liubu-revise'); setActiveStage('final'); } catch (err) { renderErrorCard(err.payload || {}); $('status').textContent=`重写失败：${String(err.message||err)}`; } }
 
       $('copy-output').onclick=()=>copyText(currentOutput,'已复制当前结果。');
       $('copy-input').onclick=()=>copyText($('input').value,'已复制输入内容。');
