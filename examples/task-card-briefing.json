@@ -1,0 +1,16 @@
+{
+  "task_title": "编发重点项目建设周简报",
+  "document_type": "简报",
+  "scenario": "内部流转",
+  "target_audience": ["领导", "项目专班"],
+  "style_goal": ["简洁有力", "汇报型"],
+  "topic": "重点项目建设进展周报",
+  "writing_goal": "用较短篇幅报送项目推进动态、亮点和风险提醒",
+  "specification": {
+    "length_hint": "800-1200字",
+    "structure_hint": "导语 + 3-5条动态要点 + 风险提醒",
+    "must_include_sections": ["主要进展", "需关注事项"]
+  },
+  "brief": "请形成第12期项目建设周简报，突出本周新增开工项目、投资完成情况和需协调问题",
+  "output_format": ["摘要版", "要点清单"]
+}

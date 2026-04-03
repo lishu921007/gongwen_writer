@@ -1,0 +1,38 @@
+batch_id: 20260402-real-ingestion-followup
+manifest_version: 1.0
+created_at: 2026-04-02T16:55:00+08:00
+owner: 户部（语料与资产管理）/ 门下省（风险审议）
+purpose: 在既有真实样本基础上完成首批入库收口，补齐审核、片段与白名单扩充记录。
+source_scope:
+  - source_domain: www.gov.cn
+    source_level: 一级
+  - source_domain: www.gov.cn/zhengce
+    source_level: 一级
+  - source_domain: www.ndrc.gov.cn
+    source_level: 一级
+  - source_domain: www.mca.gov.cn
+    source_level: 一级
+  - source_domain: www.moe.gov.cn
+    source_level: 一级
+  - source_domain: www.stats.gov.cn
+    source_level: 一级
+input_count: 2
+accepted_count: 2
+active_count: 1
+limited_count: 1
+snippet_count: 2
+artifacts:
+  - raw/gov-cn/2020-12/gw-tongzhi-20201207-001.raw.txt
+  - raw/gov-cn/2022-05/gw-tongzhi-20220517-001.raw.txt
+  - clean/by-doc-type/通知/gw-tongzhi-20201207-001.md
+  - clean/by-doc-type/通知/gw-tongzhi-20220517-001.md
+  - metadata/corpus-index.jsonl
+  - metadata/source-whitelist.yaml
+  - metadata/source-blacklist.yaml
+  - excerpts/positive/通知/通知-印发办法-标准开头.md
+  - excerpts/positive/通知/通知-印发规划-执行结尾.md
+  - reviewed/ingestion-audit/20260402-real-ingestion-followup.md
+notes:
+  - 本批次以“真实可核验 + 来源治理收口”为目标，未强行扩样本数量。
+  - 第二条样本保留 limited 状态，原因是官网页面明确标注“本文有删减”。
+  - 下一轮需优先补足 报告 / 工作方案 / 函 / 会议纪要 等 P1 文种的真实样本。

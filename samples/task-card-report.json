@@ -1,0 +1,95 @@
+{
+  "task_id": "GW-2026-04-002",
+  "task_title": "起草关于一季度重点项目推进情况的报告",
+  "task_source": "上级来文",
+  "requesting_unit": "发展规划处",
+  "owner_unit": "发展规划处",
+  "task_status": "待起草",
+  "document_type": "报告",
+  "target_audience": "省国资委",
+  "target_level": "省级",
+  "topic": "一季度重点项目推进情况",
+  "scenario": "对上汇报",
+  "task_type": "新起草",
+  "specification": {
+    "length_hint": "1800-2500字",
+    "structure_hint": "总体情况、主要进展、存在问题、下一步安排",
+    "format_hint": "正式报告体例"
+  },
+  "is_formal_dispatch": true,
+  "writing_goal": "系统报告重点项目一季度推进进展、阶段成效、问题短板及下一步安排。",
+  "key_points": [
+    "重点项目总体推进平稳有序",
+    "部分项目形成阶段性投资实物量",
+    "少数项目受要素保障影响推进偏慢"
+  ],
+  "output_format": [
+    "完整首稿",
+    "摘要版"
+  ],
+  "need_multi_versions": true,
+  "version_requirements": "同步提供1页领导汇报摘要。",
+  "fact_sources": [
+    {
+      "source_type": "统计报表",
+      "name": "2026年一季度重点项目推进台账",
+      "is_verified": true
+    },
+    {
+      "source_type": "部门报送材料",
+      "name": "各项目单位一季度工作总结",
+      "is_verified": false
+    }
+  ],
+  "authority_basis": [
+    "省国资委关于报送重点项目一季度进展情况的通知"
+  ],
+  "reference_drafts": [
+    "2025年四季度重点项目推进情况报告"
+  ],
+  "require_data_review": true,
+  "fact_risk_notes": "个别项目投资完成额仍在复核，暂不宜使用绝对数表述。",
+  "style_goal": [
+    "汇报型",
+    "稳妥克制"
+  ],
+  "tone_constraints": [
+    "坚持事实支撑、结果导向",
+    "问题和措施要对应"
+  ],
+  "forbidden_phrases": [
+    "全部完成",
+    "不存在问题"
+  ],
+  "style_references": [
+    "参考季度经济运行分析材料写法"
+  ],
+  "need_escalation": false,
+  "need_review": true,
+  "review_focus": [
+    "结构完整",
+    "事实准确",
+    "数据核对"
+  ],
+  "risk_level": "中",
+  "involve_leadership_tone": false,
+  "allow_reasoned_fill": false,
+  "missing_info_strategy": "允许补写过渡句但不得补事实",
+  "priority": "高",
+  "deadline": "2026-04-06T12:00:00+08:00",
+  "has_hard_deadline": true,
+  "deadline_reason": "4月6日下午上报前需完成处室审核。",
+  "delivery_path": "projects/gongwen-assistant/tasks/GW-2026-04-002/",
+  "asset_sink": [
+    "案例库",
+    "模板库"
+  ],
+  "reusable_after_review": true,
+  "created_at": "2026-04-02T16:05:00+08:00",
+  "updated_at": "2026-04-02T16:05:00+08:00",
+  "created_by": "吏部",
+  "assignee_role": "中书省",
+  "reviewer_role": "门下省",
+  "version": "v0.1",
+  "latest_change_note": "新增报告样例用于模板填充器联调"
+}

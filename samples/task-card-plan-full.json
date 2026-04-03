@@ -1,0 +1,102 @@
+{
+  "task_id": "GW-2026-04-003",
+  "task_title": "制定安全生产专项整治实施方案",
+  "task_source": "会议安排",
+  "requesting_unit": "安全管理处",
+  "owner_unit": "安全管理处",
+  "task_status": "待起草",
+  "document_type": "工作方案",
+  "target_audience": [
+    "各子公司",
+    "各项目部"
+  ],
+  "target_level": "对下通知",
+  "topic": "安全生产专项整治",
+  "scenario": "对下部署",
+  "task_type": "新起草",
+  "specification": {
+    "length_hint": "2000-2600字",
+    "structure_hint": "总体要求、重点任务、实施步骤、责任分工、保障措施",
+    "format_hint": "正式工作方案体例",
+    "must_include_sections": [
+      "聚焦重点领域开展风险排查",
+      "推动问题隐患闭环整改",
+      "健全长效管理机制"
+    ]
+  },
+  "is_formal_dispatch": false,
+  "writing_goal": "明确目标任务、实施步骤、责任分工和保障措施，形成可直接执行的专项整治方案。",
+  "key_points": [
+    "围绕重点区域、重点环节开展排查整治",
+    "建立隐患清单、责任清单、整改清单",
+    "通过督导复盘固化制度成果"
+  ],
+  "output_format": [
+    "完整首稿"
+  ],
+  "need_multi_versions": false,
+  "fact_sources": [
+    {
+      "source_type": "会议纪要",
+      "name": "安全生产专题推进会纪要",
+      "is_verified": true
+    },
+    {
+      "source_type": "政策文件",
+      "name": "关于进一步强化企业安全生产管理的通知",
+      "is_verified": true
+    }
+  ],
+  "authority_basis": [
+    "关于进一步强化企业安全生产管理的通知",
+    "集团年度安全生产重点工作安排"
+  ],
+  "reference_drafts": [
+    "2025年安全生产攻坚行动方案"
+  ],
+  "require_data_review": false,
+  "fact_risk_notes": "如涉及事故数量、处罚情况等数据，需以最终复核口径为准。",
+  "style_goal": [
+    "部署型",
+    "简洁有力"
+  ],
+  "tone_constraints": [
+    "突出可执行性和责任闭环",
+    "避免空泛表态式写法"
+  ],
+  "forbidden_phrases": [
+    "零事故",
+    "绝对安全"
+  ],
+  "style_references": [
+    "参考集团专项整治方案写法"
+  ],
+  "need_escalation": false,
+  "need_review": true,
+  "review_focus": [
+    "结构完整",
+    "逻辑链条",
+    "格式规范"
+  ],
+  "risk_level": "中",
+  "involve_leadership_tone": false,
+  "allow_reasoned_fill": true,
+  "missing_info_strategy": "可写框架不写事实",
+  "priority": "高",
+  "deadline": "2026-04-07T18:00:00+08:00",
+  "has_hard_deadline": true,
+  "deadline_reason": "专项行动启动前需印发执行。",
+  "delivery_path": "projects/gongwen-assistant/tasks/GW-2026-04-003/",
+  "asset_sink": [
+    "模板库",
+    "规则库"
+  ],
+  "reusable_after_review": true,
+  "created_at": "2026-04-02T16:10:00+08:00",
+  "updated_at": "2026-04-02T16:10:00+08:00",
+  "created_by": "吏部",
+  "assignee_role": "中书省",
+  "reviewer_role": "门下省",
+  "version": "v0.1",
+  "latest_change_note": "新增工作方案样例用于模板填充器联调"
+}

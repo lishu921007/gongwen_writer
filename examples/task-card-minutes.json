@@ -1,0 +1,15 @@
+{
+  "task_title": "整理安全生产专题调度会纪要",
+  "document_type": "会议纪要",
+  "scenario": "专项调度",
+  "target_audience": ["参会单位", "责任部门"],
+  "style_goal": ["庄重规范", "简洁有力"],
+  "topic": "安全生产专题调度会议定事项",
+  "writing_goal": "会后固化会议结论、责任分工和完成时限，供督办落实使用",
+  "specification": {
+    "structure_hint": "写清会议基本信息、议定事项、责任分工、完成时限",
+    "must_include_sections": ["会议议定事项", "责任分工"]
+  },
+  "brief": "会议研究了汛期安全防范、隐患整改和督查安排，要求形成纪要并明确责任分工和时限",
+  "output_format": ["完整首稿", "要点清单"]
+}

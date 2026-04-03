@@ -1,0 +1,62 @@
+version: v0.2-real-ingestion
+updated_at: 2026-04-02T16:55:00+08:00
+policy: |
+  首期仅纳入公开可访问、来源可追溯、发布主体明确的高可信来源。
+  白名单用于候选发现阶段的快速放行，不等于免审核；仍需经过完整性、风险、时效与文种匹配复核。
+  本次扩充重点从“泛 gov.cn 域名”细化到可稳定复用的权威栏目与部委官网，便于后续批量发现真实语料。
+sources:
+  - domain: www.gov.cn
+    source_level: 一级
+    owner: 中国政府网 / 国务院及国务院办公厅公开发布平台
+    allowed_layers: [source, rule, snippet]
+    preferred_doc_types: [通知, 报告, 请示公开范本, 办法, 规划, 实施意见, 纪要公开稿]
+    capture_notes: 保留原始 URL、发布日期、发文机关、文号；优先抓取正文容器并固化原件。
+    examples:
+      - https://www.gov.cn/zhengce/content/2020-12/21/content_5571847.htm
+      - https://www.gov.cn/zhengce/content/2022-12/15/content_5732092.htm
+  - domain: www.gov.cn/zhengce
+    source_level: 一级
+    owner: 中国政府网政策文件库 / 政策栏目
+    allowed_layers: [source, rule, snippet]
+    preferred_doc_types: [通知, 决定, 意见, 办法, 规划, 方案]
+    capture_notes: 优先使用政策正文页；若页面标注“有删减”或“附件另附”，必须在 notes 中明确并降级处理。
+  - domain: *.gov.cn
+    source_level: 一级
+    owner: 各级人民政府及职能部门官方网站
+    allowed_layers: [source]
+    preferred_doc_types: [通知, 通报, 函, 报告, 工作方案, 实施意见, 细则]
+    capture_notes: 需额外核验站点归属、栏目性质、是否正式文件页、是否存在 PDF/附件版本。
+  - domain: www.ndrc.gov.cn
+    source_level: 一级
+    owner: 国家发展和改革委员会官网
+    allowed_layers: [source, rule]
+    preferred_doc_types: [通知, 方案, 规划, 办法, 解读对应正式文件]
+    capture_notes: 优先采集“通知公告 / 政策文件 / 发改委令”正文页；新闻稿仅在可回溯正式文件时作为辅助。
+  - domain: www.mca.gov.cn
+    source_level: 一级
+    owner: 中华人民共和国民政部官网
+    allowed_layers: [source, rule]
+    preferred_doc_types: [通知, 函, 工作方案, 实施意见]
+    capture_notes: 优先采集“政策文件 / 通知公告”正式页；地方转载页不替代原始页。
+  - domain: www.moe.gov.cn
+    source_level: 一级
+    owner: 中华人民共和国教育部官网
+    allowed_layers: [source, rule]
+    preferred_doc_types: [通知, 办法, 实施方案, 意见]
+    capture_notes: 优先采集带发文机关、成文日期、文号的政策文件页；培训宣传稿不直入核心库。
+  - domain: www.stats.gov.cn
+    source_level: 一级
+    owner: 国家统计局官网
+    allowed_layers: [source, rule]
+    preferred_doc_types: [公报, 统计制度, 通知, 报告]
+    capture_notes: 适合作为“报告/公报”类权威样本来源，需注意统计口径版本。
+  - domain: npc.gov.cn
+    source_level: 一级
+    owner: 全国人大官网
+    allowed_layers: [source, rule]
+    preferred_doc_types: [法律, 决定, 办法, 公开说明, 报告]
+  - domain: cppcc.gov.cn
+    source_level: 一级
+    owner: 全国政协官网
+    allowed_layers: [source]
+    preferred_doc_types: [报告, 决议, 通知]

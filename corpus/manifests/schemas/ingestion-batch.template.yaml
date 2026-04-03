@@ -1,0 +1,17 @@
+batch_id: 20260330-example-batch01
+manifest_version: 1.0
+source_scope:
+  - source_domain: www.gov.cn
+    source_level: 一级
+capture_date: 2026-03-30
+operator: 户部
+item_count: 0
+input_paths:
+  - corpus/raw/www.gov.cn/2026-03/20260330-example-batch01/
+output_paths:
+  raw: corpus/raw/www.gov.cn/2026-03/20260330-example-batch01/
+  clean: corpus/clean/
+  metadata: corpus/metadata/corpus-index.jsonl
+  review_queue: corpus/reviewed/review-queue/
+notes: >-
+  先固化原件，再清洗与审核。未经审核，不得进入 active 状态。

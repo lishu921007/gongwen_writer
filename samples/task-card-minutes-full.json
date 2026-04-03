@@ -1,0 +1,33 @@
+{
+  "task_title": "整理专题调度会会议纪要",
+  "task_source": "会议安排",
+  "requesting_unit": "办公室综合处",
+  "owner_unit": "专项工作专班",
+  "document_type": "会议纪要",
+  "target_audience": ["各参会单位", "专项工作专班成员单位"],
+  "topic": "专题调度会会议纪要",
+  "scenario": "内部流转",
+  "task_type": "新起草",
+  "specification": {
+    "length_hint": "1500-2200字",
+    "structure_hint": "按会议认为、议定事项、有关要求三部分",
+    "format_hint": "正式会议纪要结构",
+    "must_include_sections": ["会议认为", "会议议定事项", "有关要求"]
+  },
+  "writing_goal": "对专题调度会形成的共识、责任分工和时限要求进行正式固化，供后续督办落实。",
+  "output_format": ["完整首稿"],
+  "fact_sources": [
+    "会议录音整理稿",
+    "会议签到表",
+    "会议议程"
+  ],
+  "require_data_review": false,
+  "style_goal": ["庄重规范", "稳妥克制"],
+  "need_escalation": false,
+  "need_review": true,
+  "review_focus": ["文种体例", "结构完整", "风险表达"],
+  "allow_reasoned_fill": true,
+  "missing_info_strategy": "允许补写过渡句但不得补事实",
+  "priority": "高",
+  "deadline": "2026-04-03T12:00:00+08:00"
+}

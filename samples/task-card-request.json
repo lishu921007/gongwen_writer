@@ -1,0 +1,94 @@
+{
+  "task_id": "GW-2026-04-001",
+  "task_title": "起草关于申请老旧办公楼消防改造资金的请示",
+  "task_source": "领导指示",
+  "requesting_unit": "后勤保障处",
+  "owner_unit": "后勤保障处",
+  "task_status": "待起草",
+  "document_type": "请示",
+  "target_audience": "集团公司",
+  "target_level": "厅局级",
+  "topic": "申请老旧办公楼消防改造资金",
+  "scenario": "对上请示",
+  "task_type": "新起草",
+  "specification": {
+    "length_hint": "1200-1800字",
+    "structure_hint": "基本情况、拟办事项、具体请示内容、有关说明",
+    "format_hint": "正式请示体例"
+  },
+  "is_formal_dispatch": true,
+  "writing_goal": "说明改造必要性、资金测算依据和拟请示事项，争取集团审批支持。",
+  "key_points": [
+    "老旧办公楼消防系统老化，存在现实风险",
+    "前期已完成排查评估并形成改造清单",
+    "拟申请专项资金支持实施改造"
+  ],
+  "output_format": [
+    "完整首稿"
+  ],
+  "need_multi_versions": false,
+  "fact_sources": [
+    {
+      "source_type": "调研记录",
+      "name": "办公楼消防设施隐患排查记录",
+      "owner": "后勤保障处",
+      "is_verified": true
+    },
+    {
+      "source_type": "统计报表",
+      "name": "消防改造费用测算表",
+      "is_verified": true
+    }
+  ],
+  "authority_basis": [
+    "《机关团体企业事业单位消防安全管理规定》",
+    "集团公司安全生产年度重点工作安排"
+  ],
+  "reference_drafts": [
+    "2025年办公区改造经费请示（定稿版）"
+  ],
+  "require_data_review": true,
+  "fact_risk_notes": "资金测算金额需与财务处最终复核口径保持一致。",
+  "style_goal": [
+    "庄重规范",
+    "稳妥克制"
+  ],
+  "tone_constraints": [
+    "请示事项必须可审批、可流转",
+    "避免夸大风险和绝对化表述"
+  ],
+  "forbidden_phrases": [
+    "完全消除风险"
+  ],
+  "style_references": [
+    "参考集团内部资金请示行文风格"
+  ],
+  "need_escalation": false,
+  "need_review": true,
+  "review_focus": [
+    "文种体例",
+    "事实准确",
+    "格式规范"
+  ],
+  "risk_level": "中",
+  "involve_leadership_tone": false,
+  "allow_reasoned_fill": false,
+  "missing_info_strategy": "允许补写过渡句但不得补事实",
+  "priority": "高",
+  "deadline": "2026-04-05T18:00:00+08:00",
+  "has_hard_deadline": true,
+  "deadline_reason": "下周集团专题会前需形成报批稿。",
+  "delivery_path": "projects/gongwen-assistant/tasks/GW-2026-04-001/",
+  "asset_sink": [
+    "模板库",
+    "案例库"
+  ],
+  "reusable_after_review": true,
+  "created_at": "2026-04-02T16:00:00+08:00",
+  "updated_at": "2026-04-02T16:00:00+08:00",
+  "created_by": "吏部",
+  "assignee_role": "中书省",
+  "reviewer_role": "门下省",
+  "version": "v0.1",
+  "latest_change_note": "新增请示样例用于模板填充器联调"
+}

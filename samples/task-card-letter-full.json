@@ -1,0 +1,31 @@
+{
+  "task_title": "起草关于商请协助提供调研材料的函",
+  "task_source": "外部协同需求",
+  "requesting_unit": "办公室综合处",
+  "owner_unit": "政策研究室",
+  "document_type": "函",
+  "target_audience": ["市发展改革委", "市统计局"],
+  "topic": "商请协助提供调研材料",
+  "scenario": "对外协调",
+  "task_type": "新起草",
+  "specification": {
+    "length_hint": "800-1200字",
+    "structure_hint": "按背景、商请事项、反馈要求三部分",
+    "format_hint": "正式函件结构"
+  },
+  "writing_goal": "就专题调研所需数据和案例材料，正式商请相关单位予以协助提供。",
+  "output_format": ["完整首稿"],
+  "fact_sources": [
+    "专题调研工作方案",
+    "前期对接纪要"
+  ],
+  "require_data_review": false,
+  "style_goal": ["庄重规范", "简洁有力"],
+  "need_escalation": false,
+  "need_review": true,
+  "review_focus": ["文种体例", "格式规范", "风险表达"],
+  "allow_reasoned_fill": true,
+  "missing_info_strategy": "可写框架不写事实",
+  "priority": "中",
+  "deadline": "2026-04-03T18:00:00+08:00"
+}

@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gongwen_writer｜公文写作工作台</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg:#eef3fb;
+        --card:rgba(255,255,255,.84);
+        --line:rgba(148,163,184,.18);
+        --text:#0f172a;
+        --muted:#64748b;
+        --primary:#2563eb;
+        --primary-strong:#1d4ed8;
+        --primary-soft:rgba(37,99,235,.10);
+        --shadow:0 18px 48px rgba(15,23,42,.10);
+        --radius:24px;
+        --danger:#dc2626;
+        --danger-soft:rgba(220,38,38,.08);
+        --warn:#d97706;
+        --warn-soft:rgba(217,119,6,.10);
+        --ok:#059669;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin:0;
+        font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+        color:var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(37,99,235,.12), transparent 30%),
+          radial-gradient(circle at 85% 10%, rgba(99,102,241,.10), transparent 24%),
+          linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);
+      }
+      .wrap { max-width: 1480px; margin: 0 auto; padding: 28px 24px 40px; }
+      .hero {
+        padding: 28px 30px;
+        border:1px solid var(--line);
+        background:linear-gradient(135deg, rgba(255,255,255,.88), rgba(255,255,255,.72));
+        backdrop-filter: blur(16px);
+        border-radius: 30px;
+        box-shadow: var(--shadow);
+        margin-bottom: 22px;
+      }
+      .eyebrow {
+        display:inline-flex; align-items:center; gap:8px;
+        padding:6px 12px; border-radius:999px;
+        background:var(--primary-soft); color:var(--primary);
+        font-size:12px; font-weight:800;
+      }
+      .hero h1 { margin:14px 0 10px; font-size:36px; line-height:1.1; }
+      .hero p { margin:0; max-width:960px; color:var(--muted); line-height:1.75; }
+      .layout { display:grid; grid-template-columns: 400px minmax(0,1fr); gap:20px; align-items:start; }
+      .stack { display:grid; gap:16px; }
+      .panel {
+        background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+        backdrop-filter: blur(16px); box-shadow: var(--shadow);
+      }
+      .panel-head {
+        display:flex; align-items:center; justify-content:space-between; gap:16px;
+        padding:18px 20px 14px; border-bottom:1px solid rgba(148,163,184,.12);
+      }
+      .panel-title { font-size:16px; font-weight:800; }
+      .panel-sub { color:var(--muted); font-size:12px; }
+      .panel-body { padding:18px 20px 20px; }
+      .field { margin-bottom:16px; }
+      .field label { display:block; font-size:13px; font-weight:700; margin-bottom:8px; color:#334155; }
+      select, textarea, input {
+        width:100%; border:1px solid rgba(148,163,184,.28); background:rgba(255,255,255,.94);
+        color:var(--text); border-radius:16px; padding:14px 15px; font:inherit; outline:none; transition:.2s ease;
+      }
+      select:focus, textarea:focus, input:focus { border-color:rgba(37,99,235,.55); box-shadow:0 0 0 4px rgba(37,99,235,.10); }
+      textarea { min-height:170px; resize:vertical; line-height:1.72; }
+      .actions, .toolbar, .small-actions, .workflow-buttons, .tab-row, .seg-row { display:flex; gap:12px; flex-wrap:wrap; }
+      button {
+        appearance:none; border:0; cursor:pointer; border-radius:14px; padding:12px 16px; font:inherit; font-weight:800; transition:.18s ease;
+      }
+      .btn-primary { background:linear-gradient(135deg,var(--primary),var(--primary-strong)); color:#fff; box-shadow:0 12px 24px rgba(37,99,235,.26); }
+      .btn-secondary { background:rgba(15,23,42,.05); color:#0f172a; }
+      .btn-warn { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+      .ghost-btn {
+        border:1px solid rgba(148,163,184,.22); background:rgba(255,255,255,.72); color:#334155;
+        padding:10px 14px; border-radius:12px; font-size:13px; font-weight:700;
+      }
+      .status {
+        margin-top:16px; padding:12px 14px; border-radius:14px; background:rgba(248,250,252,.92);
+        color:var(--muted); font-size:13px; border:1px dashed rgba(148,163,184,.28);
+      }
+      .prompt-list, .history-list { display:grid; gap:10px; }
+      .prompt-item, .history-item, .metric-card, .workflow-card, .dept-card {
+        border:1px solid rgba(148,163,184,.16); border-radius:16px; background:rgba(255,255,255,.74);
+      }
+      .prompt-item, .history-item, .metric-card { padding:14px; }
+      .prompt-item, .history-item { cursor:pointer; }
+      .prompt-title, .history-title { font-size:13px; font-weight:800; margin-bottom:6px; color:#1e293b; }
+      .prompt-desc, .history-desc { font-size:12px; color:var(--muted); line-height:1.55; }
+      .metric-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+      .metric-k { font-size:12px; color:var(--muted); margin-bottom:6px; }
+      .metric-v { font-size:14px; font-weight:800; word-break:break-word; }
+      .tab-row { margin-bottom:14px; }
+      .tab-btn {
+        padding:9px 14px; border-radius:999px; border:1px solid rgba(148,163,184,.22); background:#fff;
+        color:#475569; font-size:13px; font-weight:800;
+      }
+      .tab-btn.active { background:var(--primary-soft); color:var(--primary); border-color:rgba(37,99,235,.18); }
+      .stage-pane { display:none; }
+      .stage-pane.active { display:block; }
+      .article, pre {
+        min-height:260px; border-radius:20px;
+      }
+      .article {
+        background:rgba(255,255,255,.90); color:#0f172a; border:1px solid rgba(148,163,184,.16);
+        padding:28px; line-height:1.95; white-space:pre-wrap; word-break:break-word;
+      }
+      pre {
+        margin:0; white-space:pre-wrap; word-break:break-word; line-height:1.82;
+        background:linear-gradient(180deg,#0f172a 0%,#111827 100%); color:#e5eefc;
+        padding:22px; border:1px solid rgba(148,163,184,.12); overflow:auto; font-size:14px;
+      }
+      .summary-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:16px; }
+      .summary-card {
+        border:1px solid rgba(148,163,184,.16); border-radius:18px; background:rgba(255,255,255,.78); padding:16px;
+      }
+      .summary-card h3 { margin:0 0 10px; font-size:14px; }
+      .pill-wrap { display:flex; flex-wrap:wrap; gap:8px; }
+      .pill {
+        display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px;
+        background:rgba(37,99,235,.10); color:#1d4ed8; font-size:12px; font-weight:800;
+      }
+      .pill-risk { background:var(--danger-soft); color:var(--danger); }
+      .pill-required { background:var(--warn-soft); color:var(--warn); }
+      .workflow-note { margin-top:10px; color:var(--muted); font-size:12px; }
+      .workflow-grid, .dept-grid { display:grid; gap:14px; }
+      .workflow-card .head, .dept-card .head {
+        padding:12px 14px; font-weight:800; border-bottom:1px solid rgba(148,163,184,.12);
+        display:flex; align-items:center; justify-content:space-between; gap:8px;
+      }
+      .workflow-card .body, .dept-card .body {
+        min-height:110px; white-space:pre-wrap; word-break:break-word; line-height:1.8; color:#334155; padding:14px;
+      }
+      .collapsed .body { display:none; }
+      .risk-box, .required-box { margin-top:12px; padding:12px; border-radius:14px; }
+      .risk-box { background:var(--danger-soft); border:1px solid rgba(220,38,38,.12); }
+      .required-box { background:var(--warn-soft); border:1px solid rgba(217,119,6,.16); }
+      .box-title { font-size:12px; font-weight:800; margin-bottom:8px; letter-spacing:.02em; }
+      .flow-card {
+        border:1px solid rgba(148,163,184,.16); border-radius:18px; background:rgba(255,255,255,.78); padding:16px;
+      }
+      .flow-title { font-size:14px; font-weight:800; margin-bottom:6px; }
+      .flow-desc { font-size:12px; color:var(--muted); line-height:1.65; }
+      @media (max-width: 1180px) {
+        .layout { grid-template-columns:1fr; }
+        .metric-grid, .summary-grid { grid-template-columns:1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="hero">
+        <div class="eyebrow">公文写作工作台 · 工作流视图</div>
+        <h1>gongwen_writer</h1>
+        <p>不再把所有信息堆在一页上。页面按真实操作路径组织：先输入任务，再看最终稿，然后决定是改稿、审校，还是回看三省六部过程。</p>
+      </section>
+
+      <section class="layout">
+        <div class="stack">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Step 1 · 输入任务</div>
+                <div class="panel-sub">先输入原始需求，再生成当前版本的最终稿</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="field">
+                <label for="mode">输入模式</label>
+                <select id="mode">
+                  <option value="natural">自然语言（三省六部协作）</option>
+                  <option value="json">任务卡 JSON（结构化直连）</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="input">输入内容</label>
+                <textarea id="input">请起草一份关于召开二季度经济运行分析会议的通知，发给各处室和下属单位，要求4月10日前报送参会名单。</textarea>
+              </div>
+              <div class="actions">
+                <button class="btn-primary" id="submit">生成最终稿</button>
+                <button class="btn-secondary" id="fill-sample">填充示例</button>
+              </div>
+              <div class="status" id="status">等待输入。建议先生成最终稿，再决定是否改稿或检查。</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Step 3 · 改稿 / 检查</div>
+                <div class="panel-sub">看到当前稿件后，再决定继续改还是先做检查</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="field">
+                <label for="revise-instruction">修改要求</label>
+                <textarea id="revise-instruction" style="min-height:120px">请把语气写得更正式，并补强会议要求、责任分工和报送方式。</textarea>
+              </div>
+              <div class="workflow-buttons">
+                <button class="btn-secondary" id="revise-current">按修改要求重写当前稿件</button>
+                <button class="btn-warn" id="review-current">检查当前稿件</button>
+              </div>
+              <div class="workflow-note">说明：重写当前稿件 = 以现有稿件为底稿，再按你的修改要求重新走一遍三省六部；检查当前稿件 = 不改正文，只输出审校结论与问题。</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">常用提示词 / 最近输入</div>
+                <div class="panel-sub">辅助输入，不干扰主工作流</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="seg-row" style="margin-bottom:12px;">
+                <button class="tab-btn active" data-side-tab="prompts">常用提示词</button>
+                <button class="tab-btn" data-side-tab="history">最近输入</button>
+              </div>
+              <div id="side-prompts" class="stage-pane active"><div class="prompt-list" id="prompt-list"></div></div>
+              <div id="side-history" class="stage-pane"><div class="history-list" id="history-list"></div></div>
+              <div class="small-actions" style="margin-top:14px;">
+                <button class="ghost-btn" id="save-current">保存当前输入</button>
+                <button class="ghost-btn" id="clear-history">清空历史记录</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Step 2 · 当前结果</div>
+                <div class="panel-sub">先看最终输出，再按需切换到风险、必补要素和过程详情</div>
+              </div>
+              <div class="toolbar">
+                <button class="ghost-btn" id="copy-output">复制当前结果</button>
+                <button class="ghost-btn" id="copy-input">复制输入</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="metric-grid" id="meta-grid"></div>
+              <div style="height:16px"></div>
+              <div class="tab-row">
+                <button class="tab-btn active" data-stage="final">最终输出</button>
+                <button class="tab-btn" data-stage="signals">风险与要素</button>
+                <button class="tab-btn" data-stage="process">三省过程</button>
+                <button class="tab-btn" data-stage="liubu">六部详情</button>
+                <button class="tab-btn" data-stage="raw">源码视图</button>
+              </div>
+
+              <div class="stage-pane active" id="stage-final">
+                <div class="article" id="output-rendered">提交后将在这里显示当前结果。</div>
+              </div>
+
+              <div class="stage-pane" id="stage-signals">
+                <div class="summary-grid">
+                  <div class="summary-card">
+                    <h3>关键风险</h3>
+                    <div class="pill-wrap" id="risk-summary"></div>
+                  </div>
+                  <div class="summary-card">
+                    <h3>必补要素</h3>
+                    <div class="pill-wrap" id="required-summary"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stage-pane" id="stage-process">
+                <div class="flow-card" style="margin-bottom:14px;">
+                  <div class="flow-title">工作流说明</div>
+                  <div class="flow-desc">输入任务 → 生成最终稿 → 需要时再改稿或审校 → 最后回看中书省、门下省、尚书省过程。</div>
+                </div>
+                <div class="workflow-grid" id="workflow-section">
+                  <div class="workflow-card"><div class="head">中书省初稿 / 底稿</div><div class="body" id="draft-pane">提交后将在这里显示中书省初稿。</div></div>
+                  <div class="workflow-card"><div class="head">门下省审读意见</div><div class="body" id="review-pane">提交后将在这里显示门下省审读意见。</div></div>
+                  <div class="workflow-card"><div class="head">尚书省输出说明</div><div class="body" id="revise-pane">提交后将在这里显示尚书省输出。</div></div>
+                </div>
+              </div>
+
+              <div class="stage-pane" id="stage-liubu">
+                <div class="small-actions" style="margin-bottom:14px;">
+                  <button class="ghost-btn" id="expand-all">六部展开</button>
+                  <button class="ghost-btn" id="collapse-all">六部折叠</button>
+                </div>
+                <div class="dept-grid" id="dept-grid"></div>
+              </div>
+
+              <div class="stage-pane" id="stage-raw">
+                <pre id="output-raw">提交后将在这里显示源码结果。</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let currentOutput = '';
+      let currentDraft = '';
+      let currentLiubu = {};
+      const HISTORY_KEY = 'gongwen_writer_history_v3';
+      const QUICK_PROMPTS = [
+        { title:'会议通知', desc:'适合会议、调度会、专题会通知类需求', text:'请起草一份关于召开二季度经济运行分析会议的通知，发给各处室和下属单位，要求4月10日前报送参会名单。' },
+        { title:'比赛活动通知', desc:'适合宣讲比赛、主题活动、征文比赛等', text:'请起草一份关于举办奋进十五五，续写新篇章基层理论宣讲比赛的通知，发给各单位，要求明确参赛对象、时间安排和报名方式。' },
+        { title:'情况报告', desc:'适合阶段进展、整改落实、专项工作汇报', text:'请起草一份关于二季度重点项目推进情况的报告，报送市政府办公室，要求包含总体情况、主要进展、存在问题和下一步安排。' },
+        { title:'请示', desc:'适合向上请批、请支持、请协调事项', text:'请起草一份关于申请专项经费支持产业园配套基础设施建设的请示，报送市政府。' }
+      ];
+      const DEPT_MAP = { libu:'吏部', hubu:'户部', libu_ritual:'礼部', bingbu:'兵部', xingbu:'刑部', gongbu:'工部' };
+
+      function setOutput(t){ currentOutput=t||''; $('output-rendered').textContent=currentOutput||'无输出'; $('output-raw').textContent=currentOutput||'无输出'; }
+      function setBox(id, t){ $(id).textContent=t||'无'; }
+      function setMetric(items){ $('meta-grid').innerHTML=items.map(([k,v])=>`<div class="metric-card"><div class="metric-k">${k}</div><div class="metric-v">${v||'—'}</div></div>`).join(''); }
+      function renderPills(id, items, cls, fallback='无'){ const el=$(id); if(!items||!items.length){ el.innerHTML=`<span class="pill ${cls||''}">${fallback}</span>`; return; } el.innerHTML=items.map(x=>`<span class="pill ${cls||''}">${x}</span>`).join(''); }
+      function aggregateLiubu(liubu){ const risks=[]; const required=[]; Object.values(liubu||{}).forEach(item=>{ (item.key_risks||[]).forEach(x=>{ if(x && !risks.includes(x)) risks.push(x); }); (item.required_fields||[]).forEach(x=>{ if(x && !required.includes(x)) required.push(x); }); }); return { risks, required }; }
+      function toggleDept(key){ const card=document.querySelector(`[data-dept-card="${key}"]`); if(card) card.classList.toggle('collapsed'); }
+      function setDeptCollapse(collapsed){ document.querySelectorAll('[data-dept-card]').forEach(card=>card.classList.toggle('collapsed', collapsed)); }
+      function setActiveStage(name){ document.querySelectorAll('[data-stage]').forEach(btn=>btn.classList.toggle('active', btn.dataset.stage===name)); document.querySelectorAll('.stage-pane').forEach(p=>p.classList.remove('active')); const pane=$(`stage-${name}`); if(pane) pane.classList.add('active'); }
+      function setActiveSideTab(name){ document.querySelectorAll('[data-side-tab]').forEach(btn=>btn.classList.toggle('active', btn.dataset.sideTab===name)); ['prompts','history'].forEach(x=>{ const el=$(`side-${x}`); if(el) el.classList.toggle('active', x===name); }); }
+
+      function renderDepartments(liubu){
+        currentLiubu = liubu || {};
+        const entries=Object.entries(currentLiubu);
+        if(!entries.length){ $('dept-grid').innerHTML=''; renderPills('risk-summary', [], 'pill-risk', '暂无'); renderPills('required-summary', [], 'pill-required', '暂无'); return; }
+        $('dept-grid').innerHTML=entries.map(([k,v])=>`<div class="dept-card collapsed" data-dept-card="${k}"><div class="head"><span>${DEPT_MAP[k]||k}</span><button class="ghost-btn" data-toggle-dept="${k}">展开/折叠</button></div><div class="body"><div>${v.text||''}</div><div class="risk-box"><div class="box-title">关键风险</div><div class="pill-wrap">${((v.key_risks||[]).length ? (v.key_risks||[]).map(x=>`<span class="pill pill-risk">${x}</span>`).join('') : '<span class="pill pill-risk">暂无</span>')}</div></div><div class="required-box"><div class="box-title">必补要素</div><div class="pill-wrap">${((v.required_fields||[]).length ? (v.required_fields||[]).map(x=>`<span class="pill pill-required">${x}</span>`).join('') : '<span class="pill pill-required">暂无</span>')}</div></div></div></div>`).join('');
+        document.querySelectorAll('[data-toggle-dept]').forEach(el=>el.addEventListener('click',()=>toggleDept(el.dataset.toggleDept)));
+        const summary=aggregateLiubu(currentLiubu);
+        renderPills('risk-summary', summary.risks, 'pill-risk', '暂无');
+        renderPills('required-summary', summary.required, 'pill-required', '暂无');
+      }
+
+      function getHistory(){ try { return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'); } catch { return []; } }
+      function saveHistory(items){ localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0,12))); }
+      function addHistory(input,mode){ const items=getHistory().filter(x=>x.input!==input); items.unshift({input,mode,at:new Date().toLocaleString('zh-CN')}); saveHistory(items); renderHistory(); }
+      function renderHistory(){ const items=getHistory(); if(!items.length){ $('history-list').innerHTML='<div class="history-item"><div class="history-desc">暂无历史记录。</div></div>'; return; } $('history-list').innerHTML=items.map((item,idx)=>`<div class="history-item" data-history-index="${idx}"><div class="history-title">${item.mode==='json'?'任务卡 JSON':'自然语言'} · ${item.at}</div><div class="history-desc">${(item.input||'').slice(0,110)}</div></div>`).join(''); document.querySelectorAll('[data-history-index]').forEach(el=>el.addEventListener('click',()=>{ const item=items[Number(el.dataset.historyIndex)]; $('mode').value=item.mode; $('input').value=item.input; $('status').textContent='已从最近输入恢复内容。'; setActiveSideTab('history'); })); }
+      function renderQuickPrompts(){ $('prompt-list').innerHTML=QUICK_PROMPTS.map((item,idx)=>`<div class="prompt-item" data-prompt-index="${idx}"><div class="prompt-title">${item.title}</div><div class="prompt-desc">${item.desc}</div></div>`).join(''); document.querySelectorAll('[data-prompt-index]').forEach(el=>el.addEventListener('click',()=>{ const item=QUICK_PROMPTS[Number(el.dataset.promptIndex)]; $('mode').value='natural'; $('input').value=item.text; $('status').textContent=`已填入常用提示词：${item.title}`; setActiveSideTab('prompts'); })); }
+      async function copyText(text,message){ try { await navigator.clipboard.writeText(text||''); $('status').textContent=message; } catch { $('status').textContent='复制失败，请手动复制。'; } }
+      async function postJson(url,payload){ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok||!data.ok) throw new Error(data.error||'请求失败'); return data; }
+      function applyOrchestratorResult(data, modeLabel){ const result = data.result; currentDraft = result.shangshu?.text || result.zhongshu?.text || ''; setBox('draft-pane', result.zhongshu?.text || '无输出'); setBox('review-pane', result.menxia?.text || '无输出'); setBox('revise-pane', result.shangshu?.text || '无输出'); setOutput(result.shangshu?.text || '无输出'); setMetric([['处理模式',modeLabel],['当前状态','已完成'],['中书省','已参与'],['门下省','已参与'],['尚书省','已参与'],['六部','全部接入']]); renderDepartments(result.liubu || {}); setActiveStage('final'); $('status').textContent='已生成。'; }
+
+      async function runMain(){
+        const raw=$('input').value.trim(); if(!raw) return $('status').textContent='请先输入内容。';
+        $('status').textContent='生成中，请稍候…';
+        setOutput('正在请求三省六部协作链，请稍候…'); setBox('draft-pane','生成中，请稍候…'); setBox('review-pane','生成中，请稍候…'); setBox('revise-pane','生成中，请稍候…');
+        renderDepartments({}); setMetric([['处理模式',$('mode').value==='json'?'direct-template':'sanxing-liubu'],['当前状态','处理中'],['中书省','待返回'],['门下省','待返回'],['尚书省','待返回'],['六部','待返回']]);
+        try {
+          const isJson = $('mode').value === 'json';
+          const data = await postJson(isJson ? '/api/render' : '/api/agent-run', isJson ? { task_card: JSON.parse(raw), validate: true } : { input: raw });
+          addHistory(raw, $('mode').value);
+          if (data.mode === 'sanxing-liubu') {
+            applyOrchestratorResult(data, 'sanxing-liubu');
+          } else {
+            const result = data.result;
+            const text = result.rendered_markdown || result.final_result?.rendered_markdown || result.text || '无输出';
+            currentDraft = text; setBox('draft-pane', text); setBox('review-pane', '当前模式无门下省审读意见。'); setBox('revise-pane', text); setOutput(text);
+            setMetric([['处理模式',data.mode || 'direct-template'],['当前状态','已完成'],['中书省','未启用'],['门下省','未启用'],['尚书省','未启用'],['六部','未启用']]);
+            renderDepartments({}); setActiveStage('final'); $('status').textContent='已生成。';
+          }
+        } catch (err) {
+          $('status').textContent='生成失败'; setOutput(String(err.message||err)); setBox('draft-pane', String(err.message||err)); setBox('review-pane', '失败'); setBox('revise-pane', '失败'); setMetric([['处理模式','error'],['当前状态','失败'],['中书省','失败'],['门下省','失败'],['尚书省','失败'],['六部','失败']]); renderDepartments({});
+        }
+      }
+      async function runReview(){ const draft=(currentOutput||currentDraft||'').trim(); if(!draft) return $('status').textContent='当前还没有可检查的稿件。'; $('status').textContent='正在检查当前稿件…'; try { const data = await postJson('/api/review', { draft }); applyOrchestratorResult(data, 'sanxing-liubu-review'); setActiveStage('signals'); } catch (err) { $('status').textContent=`检查失败：${String(err.message||err)}`; } }
+      async function runRevise(){ const draft=(currentOutput||currentDraft||'').trim(); const instruction=$('revise-instruction').value.trim(); if(!draft) return $('status').textContent='当前还没有可重写的稿件。'; if(!instruction) return $('status').textContent='请先填写修改要求。'; $('status').textContent='正在按修改要求重写当前稿件…'; try { const data = await postJson('/api/revise', { draft, instruction }); applyOrchestratorResult(data, 'sanxing-liubu-revise'); setActiveStage('final'); } catch (err) { $('status').textContent=`重写失败：${String(err.message||err)}`; } }
+
+      $('copy-output').onclick=()=>copyText(currentOutput,'已复制当前结果。');
+      $('copy-input').onclick=()=>copyText($('input').value,'已复制输入内容。');
+      $('fill-sample').onclick=()=>{ $('mode').value='natural'; $('input').value=QUICK_PROMPTS[0].text; $('status').textContent='已填充示例，可直接生成。'; };
+      $('save-current').onclick=()=>{ const raw=$('input').value.trim(); if(!raw) return $('status').textContent='当前没有可保存的输入。'; addHistory(raw,$('mode').value); $('status').textContent='已保存当前输入。'; };
+      $('clear-history').onclick=()=>{ saveHistory([]); renderHistory(); $('status').textContent='历史记录已清空。'; };
+      $('expand-all').onclick=()=>setDeptCollapse(false);
+      $('collapse-all').onclick=()=>setDeptCollapse(true);
+      $('submit').onclick=runMain;
+      $('review-current').onclick=runReview;
+      $('revise-current').onclick=runRevise;
+      document.querySelectorAll('[data-stage]').forEach(btn=>btn.addEventListener('click',()=>setActiveStage(btn.dataset.stage)));
+      document.querySelectorAll('[data-side-tab]').forEach(btn=>btn.addEventListener('click',()=>setActiveSideTab(btn.dataset.sideTab)));
+
+      renderQuickPrompts(); renderHistory(); setMetric([['处理模式','等待生成'],['当前状态','待处理'],['中书省','未开始'],['门下省','未开始'],['尚书省','未开始'],['六部','未开始']]); renderPills('risk-summary', [], 'pill-risk', '暂无'); renderPills('required-summary', [], 'pill-required', '暂无');
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openclaw.local/projects/gongwen-assistant/schema/task-card.schema.json",
+  "title": "gongwen-assistant 任务卡 Schema",
+  "description": "《任务卡字段规范》的可执行 JSON Schema。用于 gongwen-assistant 项目的任务开单、流转、审校、归档与前端表单生成。",
+  "type": "object",
+  "additionalProperties": false,
+  "x-schema-version": "1.0.0",
+  "x-source": "projects/gongwen-assistant/docs/task-card-schema.md",
+  "x-field-groups": [
+    {
+      "key": "registration",
+      "title": "基本登记信息"
+    },
+    {
+      "key": "core_task",
+      "title": "公文任务核心信息"
+    },
+    {
+      "key": "writing_output",
+      "title": "写作目标与输出要求"
+    },
+    {
+      "key": "sources_facts",
+      "title": "材料与事实来源"
+    },
+    {
+      "key": "style_tone",
+      "title": "风格与口径控制"
+    },
+    {
+      "key": "review_flow",
+      "title": "流转与审校控制"
+    },
+    {
+      "key": "timing_priority",
+      "title": "时限与优先级控制"
+    },
+    {
+      "key": "delivery_archive",
+      "title": "交付与归档信息"
+    },
+    {
+      "key": "system_audit",
+      "title": "系统自动留痕信息"
+    }
+  ],
+  "required": [
+    "task_title",
+    "task_source",
+    "requesting_unit",
+    "document_type",
+    "target_audience",
+    "topic",
+    "scenario",
+    "task_type",
+    "specification",
+    "writing_goal",
+    "output_format",
+    "fact_sources",
+    "require_data_review",
+    "style_goal",
+    "need_escalation",
+    "need_review",
+    "allow_reasoned_fill",
+    "priority",
+    "deadline"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "title": "任务编号",
+      "description": "任务唯一编号，用于全流程追踪。建议格式：GW-YYYY-MM-XXX。",
+      "pattern": "^GW-[0-9]{4}-[0-9]{2}-[0-9]{3,}$",
+      "examples": [
+        "GW-2026-03-030"
+      ],
+      "readOnly": true,
+      "x-field-status": "auto",
+      "x-group": "registration"
+    },
+    "task_title": {
+      "type": "string",
+      "title": "任务标题",
+      "description": "用一句话概括任务，避免只写“写材料”“改稿子”。",
+      "minLength": 5,
+      "examples": [
+        "起草关于推进基层减负专项整治情况的专题汇报材料"
+      ],
+      "x-field-status": "required",
+      "x-group": "registration"
+    },
+    "task_source": {
+      "title": "任务来源",
+      "description": "任务来自领导指示、会议安排、上级来文、部门申请、临时交办等。",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/taskSourceEnum"
+        },
+        {
+          "type": "string",
+          "minLength": 2
+        }
+      ],
+      "examples": [
+        "厅领导临时交办"
+      ],
+      "x-field-status": "required",
+      "x-group": "registration"
+    },
+    "requesting_unit": {
+      "type": "string",
+      "title": "发起单位/需求提出方",
+      "minLength": 2,
+      "examples": [
+        "办公室综合处"
+      ],
+      "x-field-status": "required",
+      "x-group": "registration"
+    },
+    "owner_unit": {
+      "type": "string",
+      "title": "牵头单位",
+      "minLength": 2,
+      "examples": [
+        "政策法规处"
+      ],
+      "x-field-status": "optional",
+      "x-group": "registration"
+    },
+    "task_status": {
+      "$ref": "#/$defs/taskStatus",
+      "readOnly": true,
+      "x-field-status": "auto",
+      "x-group": "registration"
+    },
+    "document_type": {
+      "title": "文种",
+      "description": "必须明确属于哪类公文或材料。",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/documentType"
+        },
+        {
+          "type": "string",
+          "const": "其他"
+        }
+      ],
+      "x-field-status": "required",
+      "x-group": "core_task"
+    },
+    "target_audience": {
+      "title": "公文对象/报送对象",
+      "description": "写清给谁看、报给谁、发给谁。可单填字符串，也可结构化为数组。",
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 2
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 2
+          },
+          "uniqueItems": true
+        }
+      ],
+      "examples": [
+        "报送省政府办公厅",
+        [
+          "省政府办公厅",
+          "省委督查室"
+        ]
+      ],
+      "x-field-status": "required",
+      "x-group": "core_task"
+    },
+    "target_level": {
+      "$ref": "#/$defs/targetLevel",
+      "x-field-status": "optional",
+      "x-group": "core_task"
+    },
+    "topic": {
+      "type": "string",
+      "title": "主题事项",
+      "description": "围绕什么事项，不要与标题完全重复。",
+      "minLength": 4,
+      "examples": [
+        "基层减负专项整治进展及下一步安排"
+      ],
+      "x-field-status": "required",
+      "x-group": "core_task"
+    },
+    "scenario": {
+      "title": "使用场景",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/scenario"
+        },
+        {
+          "type": "string",
+          "minLength": 2
+        }
+      ],
+      "x-field-status": "required",
+      "x-group": "core_task"
+    },
+    "task_type": {
+      "$ref": "#/$defs/taskType",
+      "x-field-status": "required",
+      "x-group": "core_task"
+    },
+    "specification": {
+      "title": "规格/篇幅要求",
+      "description": "建议优先使用结构化对象，便于前端表单和流转系统直接消费。",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/specificationObject"
+        },
+        {
+          "type": "string",
+          "minLength": 2
+        }
+      ],
+      "x-field-status": "required",
+      "x-group": "core_task"
+    },
+    "is_formal_dispatch": {
+      "type": "boolean",
+      "title": "是否正式发文",
+      "default": false,
+      "x-field-status": "optional",
+      "x-group": "core_task"
+    },
+    "document_type_note": {
+      "type": "string",
+      "title": "其他文种说明",
+      "minLength": 2,
+      "x-field-status": "conditional",
+      "x-group": "core_task"
+    },
+    "writing_goal": {
+      "type": "string",
+      "title": "写作目标",
+      "minLength": 6,
+      "x-field-status": "required",
+      "x-group": "writing_output"
+    },
+    "key_points": {
+      "type": "array",
+      "title": "关键结论/核心观点",
+      "items": {
+        "type": "string",
+        "minLength": 2
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-field-status": "optional",
+      "x-group": "writing_output"
+    },
+    "output_format": {
+      "title": "输出形式",
+      "description": "支持单值或多值。若需要多种交付，建议数组化。",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/outputFormat"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/outputFormat"
+          },
+          "uniqueItems": true
+        },
+        {
+          "type": "string",
+          "minLength": 2
+        }
+      ],
+      "examples": [
+        [
+          "完整首稿",
+          "摘要版"
+        ]
+      ],
+      "x-field-status": "required",
+      "x-group": "writing_output"
+    },
+    "need_multi_versions": {
+      "type": "boolean",
+      "title": "是否需要多版本输出",
+      "default": false,
+      "x-field-status": "optional",
+      "x-group": "writing_output"
+    },
+    "version_requirements": {
+      "type": "string",
+      "title": "版本要求说明",
+      "minLength": 2,
+      "x-field-status": "optional",
+      "x-group": "writing_output"
+    },
+    "fact_sources": {
+      "type": "array",
+      "title": "事实材料来源",
+      "description": "必须写清主要事实材料从哪里来。支持简单文本列表，也支持结构化来源对象。",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 2
+          },
+          {
+            "$ref": "#/$defs/sourceItem"
+          }
+        ]
+      },
+      "x-field-status": "required",
+      "x-group": "sources_facts"
+    },
+    "authority_basis": {
+      "type": "array",
+      "title": "权威依据/政策依据",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 2
+          },
+          {
+            "$ref": "#/$defs/sourceItem"
+          }
+        ]
+      },
+      "minItems": 1,
+      "x-field-status": "optional",
+      "x-group": "sources_facts"
+    },
+    "reference_drafts": {
+      "type": "array",
+      "title": "历史参考稿",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 2
+          },
+          {
+            "$ref": "#/$defs/referenceDraftItem"
+          }
+        ]
+      },
+      "minItems": 1,
+      "x-field-status": "optional",
+      "x-group": "sources_facts"
+    },
+    "require_data_review": {
+      "type": "boolean",
+      "title": "数据是否需人工复核",
+      "x-field-status": "required",
+      "x-group": "sources_facts"
+    },
+    "fact_risk_notes": {
+      "type": "string",
+      "title": "事实风险备注",
+      "minLength": 2,
+      "x-field-status": "optional",
+      "x-group": "sources_facts"
+    },
+    "style_goal": {
+      "title": "风格目标",
+      "description": "支持单值、组合数组或自由补充。",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/styleGoal"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/styleGoal"
+          },
+          "uniqueItems": true
+        },
+        {
+          "type": "string",
+          "minLength": 2
+        }
+      ],
+      "examples": [
+        [
+          "稳妥克制",
+          "汇报型"
+        ]
+      ],
+      "x-field-status": "required",
+      "x-group": "style_tone"
+    },
+    "tone_constraints": {
+      "title": "口径要求",
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 2
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 2
+          },
+          "uniqueItems": true
+        }
+      ],
+      "x-field-status": "optional",
+      "x-group": "style_tone"
+    },
+    "forbidden_phrases": {
+      "type": "array",
+      "title": "禁用表达",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-field-status": "optional",
+      "x-group": "style_tone"
+    },
+    "style_references": {
+      "type": "array",
+      "title": "指定参考风格样本",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 2
+          },
+          {
+            "$ref": "#/$defs/referenceDraftItem"
+          }
+        ]
+      },
+      "minItems": 1,
+      "x-field-status": "optional",
+      "x-group": "style_tone"
+    },
+    "need_escalation": {
+      "type": "boolean",
+      "title": "是否需升格",
+      "x-field-status": "required",
+      "x-group": "style_tone"
+    },
+    "escalation_direction": {
+      "type": "string",
+      "title": "升格方向",
+      "minLength": 2,
+      "x-field-status": "optional",
+      "x-group": "style_tone"
+    },
+    "need_review": {
+      "type": "boolean",
+      "title": "是否需审稿",
+      "x-field-status": "required",
+      "x-group": "review_flow"
+    },
+    "review_focus": {
+      "title": "审稿重点",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reviewFocus"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-field-status": "optional",
+      "x-group": "review_flow"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/riskLevel",
+      "x-field-status": "optional",
+      "x-group": "review_flow"
+    },
+    "involve_leadership_tone": {
+      "type": "boolean",
+      "title": "是否涉领导口径",
+      "default": false,
+      "x-field-status": "optional",
+      "x-group": "review_flow"
+    },
+    "allow_reasoned_fill": {
+      "type": "boolean",
+      "title": "是否允许模型补写缺失内容",
+      "x-field-status": "required",
+      "x-group": "review_flow"
+    },
+    "missing_info_strategy": {
+      "title": "缺失信息处理策略",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/missingInfoStrategy"
+        },
+        {
+          "type": "string",
+          "minLength": 2
+        }
+      ],
+      "x-field-status": "optional",
+      "x-group": "review_flow"
+    },
+    "priority": {
+      "$ref": "#/$defs/priority",
+      "x-field-status": "required",
+      "x-group": "timing_priority"
+    },
+    "deadline": {
+      "type": "string",
+      "title": "截止时间",
+      "description": "最晚提交时间，采用 RFC 3339 date-time。",
+      "format": "date-time",
+      "examples": [
+        "2026-03-31T10:00:00+08:00"
+      ],
+      "x-field-status": "required",
+      "x-group": "timing_priority"
+    },
+    "has_hard_deadline": {
+      "type": "boolean",
+      "title": "是否有硬时点",
+      "default": false,
+      "x-field-status": "optional",
+      "x-group": "timing_priority"
+    },
+    "deadline_reason": {
+      "type": "string",
+      "title": "硬时点说明",
+      "minLength": 2,
+      "x-field-status": "optional",
+      "x-group": "timing_priority"
+    },
+    "delivery_path": {
+      "type": "string",
+      "title": "交付路径",
+      "description": "文件、目录、系统链接等。",
+      "minLength": 1,
+      "examples": [
+        "projects/gongwen-assistant/tasks/GW-2026-03-030/"
+      ],
+      "readOnly": true,
+      "x-field-status": "auto_or_optional",
+      "x-group": "delivery_archive"
+    },
+    "asset_sink": {
+      "type": "array",
+      "title": "期望沉淀类型",
+      "items": {
+        "$ref": "#/$defs/assetSink"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-field-status": "optional",
+      "x-group": "delivery_archive"
+    },
+    "reusable_after_review": {
+      "type": "boolean",
+      "title": "是否可复用",
+      "default": false,
+      "x-field-status": "optional",
+      "x-group": "delivery_archive"
+    },
+    "created_at": {
+      "type": "string",
+      "title": "创建时间",
+      "format": "date-time",
+      "readOnly": true,
+      "x-field-status": "auto",
+      "x-group": "system_audit"
+    },
+    "updated_at": {
+      "type": "string",
+      "title": "更新时间",
+      "format": "date-time",
+      "readOnly": true,
+      "x-field-status": "auto",
+      "x-group": "system_audit"
+    },
+    "created_by": {
+      "type": "string",
+      "title": "创建人/登记人",
+      "minLength": 1,
+      "readOnly": true,
+      "x-field-status": "auto",
+      "x-group": "system_audit"
+    },
+    "assignee_role": {
+      "$ref": "#/$defs/roleName",
+      "readOnly": true,
+      "x-field-status": "auto_or_optional",
+      "x-group": "system_audit"
+    },
+    "reviewer_role": {
+      "$ref": "#/$defs/roleName",
+      "readOnly": true,
+      "x-field-status": "auto_or_optional",
+      "x-group": "system_audit"
+    },
+    "version": {
+      "type": "string",
+      "title": "版本号",
+      "pattern": "^v[0-9]+(\\.[0-9]+){0,2}$",
+      "examples": [
+        "v0.1"
+      ],
+      "readOnly": true,
+      "x-field-status": "auto",
+      "x-group": "system_audit"
+    },
+    "latest_change_note": {
+      "type": "string",
+      "title": "最近一次口径变更说明",
+      "minLength": 2,
+      "readOnly": true,
+      "x-field-status": "auto_or_optional",
+      "x-group": "system_audit"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "need_multi_versions": {
+            "const": true
+          }
+        },
+        "required": [
+          "need_multi_versions"
+        ]
+      },
+      "then": {
+        "required": [
+          "version_requirements"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "need_escalation": {
+            "const": true
+          }
+        },
+        "required": [
+          "need_escalation"
+        ]
+      },
+      "then": {
+        "required": [
+          "escalation_direction"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "need_review": {
+            "const": true
+          }
+        },
+        "required": [
+          "need_review"
+        ]
+      },
+      "then": {
+        "required": [
+          "review_focus"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "has_hard_deadline": {
+            "const": true
+          }
+        },
+        "required": [
+          "has_hard_deadline"
+        ]
+      },
+      "then": {
+        "required": [
+          "deadline_reason"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "allow_reasoned_fill": {
+            "const": false
+          }
+        },
+        "required": [
+          "allow_reasoned_fill"
+        ]
+      },
+      "then": {
+        "properties": {
+          "missing_info_strategy": {
+            "not": {
+              "const": "允许补写事实"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "authority_basis"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authority_basis": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "document_type": {
+            "const": "其他"
+          }
+        },
+        "required": [
+          "document_type"
+        ]
+      },
+      "then": {
+        "required": [
+          "document_type_note"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "taskSourceEnum": {
+      "type": "string",
+      "enum": [
+        "领导指示",
+        "会议安排",
+        "上级来文",
+        "部门申请",
+        "临时交办",
+        "督查督办",
+        "专项调度",
+        "历史任务延续",
+        "外部协同需求",
+        "其他"
+      ]
+    },
+    "taskStatus": {
+      "type": "string",
+      "title": "当前状态",
+      "enum": [
+        "待立项",
+        "待起草",
+        "待审议",
+        "待派发",
+        "进行中",
+        "待复核",
+        "已退回",
+        "已完成",
+        "已归档"
+      ]
+    },
+    "documentType": {
+      "type": "string",
+      "enum": [
+        "通知",
+        "请示",
+        "报告",
+        "工作方案",
+        "汇报材料",
+        "领导讲话稿",
+        "会议纪要",
+        "函",
+        "通报",
+        "总结",
+        "简报",
+        "提纲"
+      ]
+    },
+    "targetLevel": {
+      "type": "string",
+      "title": "主送对象级别",
+      "enum": [
+        "中央",
+        "省级",
+        "厅局级",
+        "市县级",
+        "内部会议",
+        "对下通知"
+      ]
+    },
+    "scenario": {
+      "type": "string",
+      "enum": [
+        "对上请示",
+        "对上汇报",
+        "对下部署",
+        "上会汇报",
+        "领导讲话",
+        "内部流转",
+        "迎检迎查",
+        "对外协调",
+        "存档备查",
+        "专项调度",
+        "其他"
+      ]
+    },
+    "taskType": {
+      "type": "string",
+      "title": "任务类型",
+      "enum": [
+        "新起草",
+        "基于旧稿改写",
+        "扩写",
+        "压缩",
+        "重组",
+        "审校修订",
+        "提纲生成"
+      ]
+    },
+    "specificationObject": {
+      "type": "object",
+      "title": "规格对象",
+      "additionalProperties": false,
+      "properties": {
+        "length_hint": {
+          "type": "string",
+          "title": "字数范围/篇幅提示",
+          "minLength": 2,
+          "examples": [
+            "2500-3000字"
+          ]
+        },
+        "structure_hint": {
+          "type": "string",
+          "title": "结构提示",
+          "minLength": 2,
+          "examples": [
+            "分三部分，每部分2-3个要点"
+          ]
+        },
+        "format_hint": {
+          "type": "string",
+          "title": "格式提示",
+          "minLength": 2,
+          "examples": [
+            "正式汇报材料结构"
+          ]
+        },
+        "title_level_limit": {
+          "type": "integer",
+          "title": "标题层级限制",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "must_include_sections": {
+          "type": "array",
+          "title": "必须包含章节",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "must_avoid_sections": {
+          "type": "array",
+          "title": "禁止出现章节",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "minProperties": 1
+    },
+    "outputFormat": {
+      "type": "string",
+      "enum": [
+        "提纲",
+        "完整首稿",
+        "修订稿",
+        "审校意见单",
+        "摘要版",
+        "对比稿",
+        "讲话提词版",
+        "要点清单",
+        "表格化输出"
+      ]
+    },
+    "sourceItem": {
+      "type": "object",
+      "title": "来源项",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "政策文件",
+            "已定稿历史公文",
+            "会议纪要",
+            "部门报送材料",
+            "统计报表",
+            "领导批示",
+            "调研记录",
+            "新闻通稿",
+            "待核材料",
+            "其他"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "title": "来源名称"
+        },
+        "reference_id": {
+          "type": "string",
+          "title": "来源编号/文号"
+        },
+        "uri": {
+          "type": "string",
+          "title": "链接或文件路径"
+        },
+        "owner": {
+          "type": "string",
+          "title": "提供方/责任方"
+        },
+        "is_verified": {
+          "type": "boolean",
+          "title": "是否已核验"
+        },
+        "note": {
+          "type": "string",
+          "title": "备注"
+        }
+      }
+    },
+    "referenceDraftItem": {
+      "type": "object",
+      "title": "参考稿项",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2
+        },
+        "version": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "adoptable_scope": {
+          "type": "string",
+          "description": "允许参考的范围，如结构、语气、标题。"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "styleGoal": {
+      "type": "string",
+      "enum": [
+        "庄重规范",
+        "简洁有力",
+        "稳妥克制",
+        "汇报型",
+        "部署型",
+        "讲话型",
+        "问题导向型",
+        "成效总结型"
+      ]
+    },
+    "reviewFocus": {
+      "type": "string",
+      "enum": [
+        "文种体例",
+        "结构完整",
+        "逻辑链条",
+        "事实准确",
+        "数据核对",
+        "风险表达",
+        "政策口径",
+        "格式规范",
+        "套话压缩",
+        "领导风格匹配"
+      ]
+    },
+    "riskLevel": {
+      "type": "string",
+      "title": "风险等级",
+      "enum": [
+        "低",
+        "中",
+        "高",
+        "特别高"
+      ]
+    },
+    "missingInfoStrategy": {
+      "type": "string",
+      "enum": [
+        "缺失则打标待补",
+        "可写框架不写事实",
+        "允许补写过渡句但不得补事实",
+        "退回补充材料"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "紧急",
+        "高",
+        "中",
+        "低"
+      ]
+    },
+    "assetSink": {
+      "type": "string",
+      "enum": [
+        "模板库",
+        "案例库",
+        "规则库",
+        "反例库",
+        "语料库"
+      ]
+    },
+    "roleName": {
+      "type": "string",
+      "title": "角色",
+      "enum": [
+        "太子",
+        "中书省",
+        "门下省",
+        "尚书省",
+        "吏部",
+        "户部",
+        "礼部",
+        "兵部",
+        "刑部",
+        "工部"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "task_id": "GW-2026-03-030",
+      "task_title": "起草关于推进基层减负专项整治情况的专题汇报材料",
+      "task_source": "临时交办",
+      "requesting_unit": "办公室综合处",
+      "owner_unit": "政策法规处",
+      "task_status": "待起草",
+      "document_type": "汇报材料",
+      "target_audience": "省政府办公厅",
+      "target_level": "省级",
+      "topic": "基层减负专项整治进展及下一步安排",
+      "scenario": "上会汇报",
+      "task_type": "基于旧稿改写",
+      "specification": {
+        "length_hint": "2500-3000字",
+        "structure_hint": "分三部分，每部分2-3个要点",
+        "format_hint": "正式汇报材料结构"
+      },
+      "is_formal_dispatch": false,
+      "writing_goal": "向省政府汇报阶段性成效、存在问题和下一步安排，并争取政策支持",
+      "key_points": [
+        "专项整治已取得阶段性进展",
+        "基层反映强烈的问题已纳入整改",
+        "仍需省级层面统筹推动"
+      ],
+      "output_format": [
+        "完整首稿",
+        "摘要版"
+      ],
+      "need_multi_versions": true,
+      "version_requirements": "同时提供3000字会签版和800字口头汇报版",
+      "fact_sources": [
+        {
+          "source_type": "统计报表",
+          "name": "2026年一季度专项整治统计台账",
+          "is_verified": true
+        },
+        {
+          "source_type": "会议纪要",
+          "name": "3月18日专题调度会纪要"
+        },
+        "各地市报送情况汇总表"
+      ],
+      "authority_basis": [
+        "《关于持续整治形式主义为基层减负的若干规定》",
+        "省政府办公厅〔2026〕12号文"
+      ],
+      "reference_drafts": [
+        "2025年同主题季度汇报稿（定稿版）"
+      ],
+      "require_data_review": true,
+      "fact_risk_notes": "两地市报送口径尚未完全统一，涉数字表述暂用“约”并待复核",
+      "style_goal": [
+        "稳妥克制",
+        "汇报型"
+      ],
+      "tone_constraints": [
+        "与3月专题会议口径保持一致",
+        "避免绝对化表述"
+      ],
+      "forbidden_phrases": [
+        "彻底完成",
+        "零问题"
+      ],
+      "style_references": [
+        "参考2025年全省专项整治推进会汇报稿的写法"
+      ],
+      "need_escalation": true,
+      "escalation_direction": "从处室工作总结升格为省级专题汇报口径",
+      "need_review": true,
+      "review_focus": [
+        "事实准确",
+        "政策口径",
+        "风险表达"
+      ],
+      "risk_level": "高",
+      "involve_leadership_tone": true,
+      "allow_reasoned_fill": false,
+      "missing_info_strategy": "允许补写过渡句但不得补事实",
+      "priority": "紧急",
+      "deadline": "2026-03-31T10:00:00+08:00",
+      "has_hard_deadline": true,
+      "deadline_reason": "下午14:30专题会前需完成领导审阅版",
+      "delivery_path": "projects/gongwen-assistant/tasks/GW-2026-03-030/",
+      "asset_sink": [
+        "案例库",
+        "规则库"
+      ],
+      "reusable_after_review": true,
+      "created_at": "2026-03-30T21:10:00+08:00",
+      "updated_at": "2026-03-30T21:26:00+08:00",
+      "created_by": "吏部",
+      "assignee_role": "中书省",
+      "reviewer_role": "门下省",
+      "version": "v0.1",
+      "latest_change_note": "初始登记完成，待补两地市最新数据复核结果"
+    }
+  ]
+}

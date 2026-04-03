@@ -1,0 +1,103 @@
+{
+  "task_id": "GW-2026-03-031",
+  "task_title": "起草关于开展汛前安全隐患排查整治工作的通知",
+  "task_source": "会议安排",
+  "requesting_unit": "办公室综合处",
+  "owner_unit": "安全管理处",
+  "task_status": "待起草",
+  "document_type": "通知",
+  "target_audience": [
+    "各市（州）分公司",
+    "机关各处室"
+  ],
+  "target_level": "对下通知",
+  "topic": "开展汛前安全隐患排查整治工作",
+  "scenario": "对下部署",
+  "task_type": "新起草",
+  "specification": {
+    "length_hint": "1500-2000字",
+    "structure_hint": "按照总体要求、主要任务、时间安排、有关要求四部分展开",
+    "format_hint": "正式通知体例",
+    "must_include_sections": [
+      "全面排查重点风险点",
+      "建立问题台账并闭环整改",
+      "按时报送排查整治情况"
+    ]
+  },
+  "is_formal_dispatch": true,
+  "writing_goal": "对全系统汛前安全风险排查整治工作作出统一部署，明确排查重点、整改要求和报送时限。",
+  "key_points": [
+    "突出对在建项目、老旧办公区、仓储设施等重点部位开展排查",
+    "对发现问题实行清单化管理、销号式整改",
+    "严格执行重要情况即报制度"
+  ],
+  "output_format": [
+    "完整首稿"
+  ],
+  "need_multi_versions": false,
+  "fact_sources": [
+    {
+      "source_type": "会议纪要",
+      "name": "3月30日安全生产专题调度会纪要",
+      "is_verified": true
+    },
+    {
+      "source_type": "政策文件",
+      "name": "关于做好2026年防汛备汛工作的通知",
+      "owner": "省安委办",
+      "is_verified": true
+    }
+  ],
+  "authority_basis": [
+    "省安委办关于做好2026年防汛备汛工作的通知",
+    "集团公司2026年第二季度安全生产重点任务安排"
+  ],
+  "reference_drafts": [
+    "2025年汛前检查工作通知（定稿版）"
+  ],
+  "require_data_review": true,
+  "fact_risk_notes": "涉及隐患数量、整改完成率等数据时需以各单位复核报送口径为准。",
+  "style_goal": [
+    "庄重规范",
+    "部署型"
+  ],
+  "tone_constraints": [
+    "措辞务求严谨，避免绝对化表述",
+    "要求明确、指令清晰"
+  ],
+  "forbidden_phrases": [
+    "零风险",
+    "彻底杜绝"
+  ],
+  "style_references": [
+    "参考2025年安全生产专项整治通知写法"
+  ],
+  "need_escalation": false,
+  "need_review": true,
+  "review_focus": [
+    "文种体例",
+    "结构完整",
+    "风险表达"
+  ],
+  "risk_level": "中",
+  "involve_leadership_tone": false,
+  "allow_reasoned_fill": false,
+  "missing_info_strategy": "允许补写过渡句但不得补事实",
+  "priority": "高",
+  "deadline": "2026-04-01T18:00:00+08:00",
+  "has_hard_deadline": true,
+  "deadline_reason": "4月2日上午专题部署会前需印发正式文件",
+  "delivery_path": "projects/gongwen-assistant/tasks/GW-2026-03-031/",
+  "asset_sink": [
+    "模板库",
+    "案例库"
+  ],
+  "reusable_after_review": true,
+  "created_at": "2026-03-30T22:20:00+08:00",
+  "updated_at": "2026-03-30T22:20:00+08:00",
+  "created_by": "吏部",
+  "assignee_role": "中书省",
+  "reviewer_role": "门下省",
+  "version": "v0.1",
+  "latest_change_note": "样例任务卡，用于模板填充器联调"
+}
