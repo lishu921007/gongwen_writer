@@ -1,0 +1,21 @@
+batch_id: 20260403-real-corpus-second-batch
+source_scope: 用户补充的真实公开语料链接（第二批）
+capture_date: 2026-04-03
+operator: openclaw-main
+manifest_version: v0.3-real-ingestion
+item_count: 8
+output_paths:
+  - corpus/raw/gov-cn/2024-10/gw-jiyao-20241024-001.raw.txt
+  - corpus/clean/by-doc-type/会议纪要/gw-jiyao-20241024-001.md
+  - corpus/raw/mee/2024-07/gw-dangwei-20240702-001.raw.txt
+  - corpus/clean/by-doc-type/党委材料/gw-dangwei-20240702-001.md
+  - corpus/raw/gov-cn/2018-10/gw-shishifangan-20181027-001.raw.txt
+  - corpus/clean/by-doc-type/实施方案/gw-shishifangan-20181027-001.md
+  - corpus/raw/wehdz/2025-02/gw-zongjie-20250225-001.raw.txt
+  - corpus/clean/by-doc-type/工作总结/gw-zongjie-20250225-001.md
+  - corpus/raw/gov-cn/2025-03/gw-baogao-20250305-001.raw.txt
+  - corpus/clean/by-doc-type/报告/gw-baogao-20250305-001.md
+  - corpus/pending/20260403-real-corpus-followup.md
+notes: |
+  本批次优先固化可稳定抓取的真实公开语料，并将抓取受限、PDF 需 OCR、栏目页未解析的链接降级到 pending 待核池。
+  其中生态环境部党建交流稿同时可作为党委材料与讲话稿风格参考；政府工作报告因正文截断，当前标记为 limited。

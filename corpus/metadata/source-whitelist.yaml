@@ -60,3 +60,22 @@ sources:
     owner: 全国政协官网
     allowed_layers: [source]
     preferred_doc_types: [报告, 决议, 通知]
+
+  - domain: www.hbqj.gov.cn
+    source_level: 一级
+    owner: 潜江市人民政府 / 市级部门公开发布平台
+    allowed_layers: [source, snippet]
+    preferred_doc_types: [会议纪要, 通知, 报告]
+    capture_notes: 优先采集政府会议、政务公开正式栏目页，保留会议名称、主持人、时间地点等结构信息。
+  - domain: www.mee.gov.cn
+    source_level: 一级
+    owner: 中华人民共和国生态环境部官网
+    allowed_layers: [source, rule, snippet]
+    preferred_doc_types: [党委材料, 党建经验, 讲话稿, 报告]
+    capture_notes: 党建与机关党委栏目可作为党委材料、讲话稿风格参考，但要区分新闻摘登与正式文件。
+  - domain: www.wehdz.gov.cn
+    source_level: 一级
+    owner: 武汉东湖新技术开发区官网
+    allowed_layers: [source, snippet]
+    preferred_doc_types: [工作总结, 工作计划, 汇报材料]
+    capture_notes: 优先采集部门计划和总结栏目，可作为基层综合总结样板。
